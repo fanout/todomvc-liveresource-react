@@ -10,6 +10,7 @@
 		<link rel="stylesheet" href="css/app.css">
 	</head>
 	<body>
+        <div id="main"></div>
 		<section class="todoapp">
 			<header class="header">
 				<h1>todos</h1>
@@ -70,6 +71,23 @@
 		</footer>
 		<!-- Scripts here. Don't remove ↓ -->
 		<script src="node_modules/todomvc-common/base.js"></script>
+        <script src="js/vendor/react-0.14.2.min.js"></script>
+        <script src="js/vendor/react-dom-0.14.2.min.js"></script>
+        <!--
+        <script src="js/vendor/react.js"></script>
+        <script src="js/vendor/react-dom.js"></script>
+        -->
+        <script src="js/vendor/pollymer-1.1.1.js"></script>
+        <script src="js/vendor/websockhop-1.0.1.js"></script>
+        <script src="js/vendor/liveresource-0.1.1.min.js"></script>
+        <script src="js/build/bundle.js"></script>
+
 		<script src="js/app.js"></script>
-	</body>
+
+        <script src="node_modules/babel-core/browser.min.js"></script>
+        <script type="text/babel">
+            ReactDOM.render(<Main/>, document.getElementById('main'));
+        </script>
+
+    </body>
 </html>
