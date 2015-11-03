@@ -28,8 +28,23 @@
 		<script src="js/app.js"></script>
 
         <script src="node_modules/babel-core/browser.min.js"></script>
-        <script type="text/babel">
-            ReactDOM.render(<Main/>, document.getElementById('main'));
+        <script>
+            // var API_ENDPOINT = "http://todomvc-api.liveresource.org/todos/";
+
+            var main = ReactDOM.render(React.createElement(Main), document.getElementById('main'));
+            var todoApp = main.getTodoApp();
+
+            /*
+            var liveResource = new LiveResource(API_ENDPOINT);
+            liveResource.on("ready", function(data) {
+                todoApp.addItems(data);
+            });
+            */
+
+            todoApp.addItems([{id: 1, text: "ABC", completed: false}]);
+            todoApp.addItems([{id: 2, text: "DEF", completed: true}]);
+
+
         </script>
 
     </body>
