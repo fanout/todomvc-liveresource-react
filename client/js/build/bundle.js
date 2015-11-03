@@ -1,5 +1,14 @@
 "use strict";
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Constants = function Constants() {
+  _classCallCheck(this, Constants);
+};
+
+Constants.ENTER_KEY = 13;
+"use strict";
+
 var Footer = function Footer() {
     return React.createElement(
         "footer",
@@ -270,10 +279,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var TodoAppHeader = (function (_React$Component) {
     _inherits(TodoAppHeader, _React$Component);
 
-    function TodoAppHeader() {
+    function TodoAppHeader(props) {
         _classCallCheck(this, TodoAppHeader);
 
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(TodoAppHeader).apply(this, arguments));
+        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(TodoAppHeader).call(this, props));
+
+        _this.state = {
+            currentValue: ''
+        };
+        return _this;
     }
 
     _createClass(TodoAppHeader, [{
@@ -287,13 +301,34 @@ var TodoAppHeader = (function (_React$Component) {
                     null,
                     "todos"
                 ),
-                React.createElement("input", { className: "new-todo", placeholder: "What needs to be done?", autofocus: true, onChange: this.onChange.bind(this) })
+                React.createElement("input", { className: "new-todo",
+                    value: this.state.currentValue,
+                    onChange: this.onChange.bind(this),
+                    onKeyDown: this.onKeyDown.bind(this),
+                    placeholder: "What needs to be done?",
+                    autofocus: true })
             );
         }
     }, {
         key: "onChange",
         value: function onChange(event) {
-            this.props.app.addTodo(event.target.value);
+            this.setState({ currentValue: event.target.value });
+        }
+    }, {
+        key: "onKeyDown",
+        value: function onKeyDown(event) {
+            if (event.keyCode !== Constants.ENTER_KEY) {
+                return;
+            }
+
+            event.preventDefault();
+
+            var val = this.state.currentValue.trim();
+
+            if (val) {
+                this.props.app.addTodo(val);
+                this.setState({ currentValue: '' });
+            }
         }
     }]);
 
