@@ -2,7 +2,8 @@
   "private": true,
   "dependencies": {
     "todomvc-app-css": "^2.0.0",
-    "todomvc-common": "^1.0.0"
+    "todomvc-common": "^1.0.0",
+    "babel-core": "^5.8.33"
   },
   "devDependencies": {
     "gulp": "^3.9.0",
