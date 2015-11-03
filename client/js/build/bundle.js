@@ -78,7 +78,7 @@ var Main = (function (_React$Component) {
 })(React.Component);
 
 Main.defaultProps = {};
-"use strict";
+'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
@@ -97,129 +97,166 @@ var TodoApp = (function (_React$Component) {
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(TodoApp).call(this));
 
         _this.state = {
+            mode: TodoApp.MODES.ALL,
             todoItems: []
         };
+        var router = Router({
+            '/': function _() {
+                return _this.setState({ mode: TodoApp.MODES.ALL });
+            },
+            '/active': function active() {
+                return _this.setState({ mode: TodoApp.MODES.ACTIVE });
+            },
+            '/completed': function completed() {
+                return _this.setState({ mode: TodoApp.MODES.COMPLETED });
+            }
+        });
+        router.init('/');
         return _this;
     }
 
     _createClass(TodoApp, [{
-        key: "render",
+        key: 'render',
         value: function render() {
+            var _this2 = this;
+
+            var activeTodosCount = 0;
+            var completedTodosCount = 0;
+            var filteredTodoItems = [];
+
+            this.state.todoItems.forEach(function (todoItem) {
+                if (todoItem.completed) {
+                    completedTodosCount++;
+                    if (_this2.state.mode == TodoApp.MODES.COMPLETED || _this2.state.mode == TodoApp.MODES.ALL) {
+                        filteredTodoItems.push(todoItem);
+                    }
+                } else {
+                    activeTodosCount++;
+                    if (_this2.state.mode == TodoApp.MODES.ACTIVE || _this2.state.mode == TodoApp.MODES.ALL) {
+                        filteredTodoItems.push(todoItem);
+                    }
+                }
+            });
+
             return React.createElement(
-                "section",
-                { className: "todoapp" },
+                'section',
+                { className: 'todoapp' },
                 React.createElement(TodoAppHeader, { app: this }),
-                React.createElement(TodoAppMain, { app: this, todoItems: this.state.todoItems }),
-                React.createElement(TodoAppFooter, null)
+                React.createElement(TodoAppMain, { app: this, todoItems: filteredTodoItems }),
+                activeTodosCount > 0 || completedTodosCount > 0 ? React.createElement(TodoAppFooter, { app: this,
+                    mode: this.state.mode,
+                    activeTodosCount: activeTodosCount,
+                    completedTodosCount: activeTodosCount,
+                    onClearCompleted: this.onClearCompleted
+                }) : null
             );
         }
     }, {
-        key: "addItems",
+        key: 'addItems',
         value: function addItems(data) {
             var todoItems = this.state.todoItems.concat(data);
             this.setState({ todoItems: todoItems });
         }
     }, {
-        key: "addTodo",
+        key: 'addTodo',
         value: function addTodo(text) {
-            console.log("add text: " + text);
+            console.log('add text: ' + text);
         }
     }, {
-        key: "updateTodo",
+        key: 'updateTodo',
         value: function updateTodo(id, text, completed) {
-            console.log("update id: " + id + " text: " + text + " completed: " + completed);
+            console.log('update id: ' + id + ' text: ' + text + ' completed: ' + completed);
         }
     }, {
-        key: "destroyTodo",
+        key: 'destroyTodo',
         value: function destroyTodo(id) {
-            console.log("destroy " + id);
+            console.log('destroy ' + id);
         }
     }, {
-        key: "toggleAll",
+        key: 'toggleAll',
         value: function toggleAll() {
-            console.log("Toggle All Clicked!");
+            console.log('Toggle All Clicked!');
+        }
+    }, {
+        key: 'onClearCompleted',
+        value: function onClearCompleted() {
+            console.log('Clear all Clicked!');
         }
     }]);
 
     return TodoApp;
 })(React.Component);
+
+TodoApp.MODES = {
+    ALL: 'all',
+    ACTIVE: 'active',
+    COMPLETED: 'completed'
+};
 "use strict";
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var TodoAppFooter = (function (_React$Component) {
-    _inherits(TodoAppFooter, _React$Component);
-
-    function TodoAppFooter() {
-        _classCallCheck(this, TodoAppFooter);
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(TodoAppFooter).apply(this, arguments));
-    }
-
-    _createClass(TodoAppFooter, [{
-        key: "render",
-        value: function render() {
-            return React.createElement(
-                "footer",
-                { className: "footer" },
+function TodoAppFooter(props) {
+    var itemsUnit = props.activeTodosCount == 1 ? "item" : "items";
+    return React.createElement(
+        "footer",
+        { className: "footer" },
+        React.createElement(
+            "span",
+            { className: "todo-count" },
+            React.createElement(
+                "strong",
+                null,
+                props.activeTodosCount
+            ),
+            " ",
+            itemsUnit,
+            " left"
+        ),
+        React.createElement(
+            "ul",
+            { className: "filters" },
+            React.createElement(
+                "li",
+                null,
                 React.createElement(
-                    "span",
-                    { className: "todo-count" },
-                    React.createElement(
-                        "strong",
-                        null,
-                        "0"
-                    ),
-                    " item left"
-                ),
-                React.createElement(
-                    "ul",
-                    { className: "filters" },
-                    React.createElement(
-                        "li",
-                        null,
-                        React.createElement(
-                            "a",
-                            { className: "selected", href: "#/" },
-                            "All"
-                        )
-                    ),
-                    React.createElement(
-                        "li",
-                        null,
-                        React.createElement(
-                            "a",
-                            { href: "#/active" },
-                            "Active"
-                        )
-                    ),
-                    React.createElement(
-                        "li",
-                        null,
-                        React.createElement(
-                            "a",
-                            { href: "#/completed" },
-                            "Completed"
-                        )
-                    )
-                ),
-                React.createElement(
-                    "button",
-                    { className: "clear-completed" },
-                    "Clear completed"
+                    "a",
+                    { href: "#/",
+                        className: props.mode === TodoApp.MODES.ALL ? "selected" : null
+                    },
+                    "All"
                 )
-            );
-        }
-    }]);
-
-    return TodoAppFooter;
-})(React.Component);
+            ),
+            React.createElement(
+                "li",
+                null,
+                React.createElement(
+                    "a",
+                    { href: "#/active",
+                        className: props.mode === TodoApp.MODES.ACTIVE ? "selected" : null
+                    },
+                    "Active"
+                )
+            ),
+            React.createElement(
+                "li",
+                null,
+                React.createElement(
+                    "a",
+                    { href: "#/completed",
+                        className: props.mode === TodoApp.MODES.COMPLETED ? "selected" : null
+                    },
+                    "Completed"
+                )
+            )
+        ),
+        props.completedTodosCount > 0 ? React.createElement(
+            "button",
+            {
+                className: "clear-completed",
+                onClick: props.app.onClearCompleted.bind(props.app) },
+            "Clear completed"
+        ) : null
+    );
+}
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();

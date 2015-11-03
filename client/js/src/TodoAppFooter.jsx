@@ -1,25 +1,32 @@
-class TodoAppFooter extends React.Component {
-    render() {
-        /* This footer should hidden by default and shown when there are todos */
-        return (
-            <footer className="footer">
-                {/* This should be `0 items left` by default */}
-                <span className="todo-count"><strong>0</strong> item left</span>
-                {/* Remove this if you don't implement routing */}
-                <ul className="filters">
-                    <li>
-                        <a className="selected" href="#/">All</a>
-                    </li>
-                    <li>
-                        <a href="#/active">Active</a>
-                    </li>
-                    <li>
-                        <a href="#/completed">Completed</a>
-                    </li>
-                </ul>
-                {/* Hidden if no completed items are left ↓ */}
-                <button className="clear-completed">Clear completed</button>
-            </footer>
-        );
-    }
+function TodoAppFooter(props) {
+    let itemsUnit = props.activeTodosCount == 1 ? "item" : "items";
+    return (
+        <footer className="footer">
+            <span className="todo-count"><strong>{props.activeTodosCount}</strong> {itemsUnit} left</span>
+            <ul className="filters">
+                <li>
+                    <a href="#/"
+                       className={props.mode === TodoApp.MODES.ALL ? "selected" : null}
+                    >All</a>
+                </li>
+                <li>
+                    <a href="#/active"
+                       className={props.mode === TodoApp.MODES.ACTIVE ? "selected" : null}
+                    >Active</a>
+                </li>
+                <li>
+                    <a href="#/completed"
+                       className={props.mode === TodoApp.MODES.COMPLETED ? "selected" : null}
+                    >Completed</a>
+                </li>
+            </ul>
+            {props.completedTodosCount > 0 ? (
+                <button
+                    className="clear-completed"
+                    onClick={props.app.onClearCompleted.bind(props.app)}>
+                    Clear completed
+                </button>
+            ) : null}
+        </footer>
+    );
 }
