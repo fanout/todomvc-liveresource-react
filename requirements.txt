@@ -1,0 +1,15 @@
+Django==1.8.5
+PyJWT==1.4.0
+argparse==1.2.1
+dj-database-url==0.3.0
+dj-static==0.0.6
+django-grip==1.6.1
+django-toolbelt==0.0.1
+gripcontrol==2.4.2
+gunicorn==19.3.0
+psycopg2==2.6.1
+pubcontrol==2.2.7
+redis==2.10.5
+requests==2.8.1
+static3==0.6.1
+wsgiref==0.1.2
