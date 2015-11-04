@@ -57,49 +57,7 @@ class TodoApp extends React.Component {
             </section>
         );
     }
-    addItem(item, pendingSync) {
-        // If "pending sync" is true then the items we
-        // are setting are not "real" but they are placeholders
-        // until we get real stuff from the server
-        let updatedItemsList = null;
 
-        let pos = -1;
-        let itemWasPendingSync = false;
-        for(let i = 0; i < this.state.todoItems.length; i++) {
-            var todoItem = this.state.todoItems[i];
-            if (item.id == todoItem.id) {
-                pos = i;
-                itemWasPendingSync = todoItem.pendingSync;
-                break;
-            }
-        }
-
-        if (pos < 0) {
-            item.pendingSync = pendingSync;
-            updatedItemsList = this.state.todoItems.concat([item]);
-        } else {
-            if (!itemWasPendingSync && pendingSync) {
-                // If the item was not pending sync and
-                // this current one wants to be pending
-                // sync, we want to discard this
-            } else if (itemWasPendingSync && !pendingSync) {
-                // If the item was pending sync and we have
-                // a new one that isn't then we pull it out
-                // of the old location and add it to the
-                // end.
-                updatedItemsList = this.state.todoItems.slice();
-                updatedItemsList.splice(pos, 1);
-                updatedItemsList.push(item);
-            } else {
-                // In all other cases we update the item.
-                updatedItemsList = this.state.todoItems.slice();
-                updatedItemsList[pos] = item;
-            }
-        }
-        if (updatedItemsList != null) {
-            this.setState({todoItems: updatedItemsList});
-        }
-    }
     syncItems(data) {
         var mappedIds = [];
         var mappedItems = {};
@@ -128,13 +86,48 @@ class TodoApp extends React.Component {
     }
 
     createTodo(text) {
+        // This is a "tentative one" to display
+        // until we get official update notice
         var newItem = {
             id: null,
             text: text,
-            completed: false
+            completed: false,
+            pendingSync: true
         };
         this.setState({todoItems: this.state.todoItems.concat([newItem])});
         return newItem;
+    }
+
+    addTodo(item) {
+        let updatedItemsList = null;
+
+        let pos = -1;
+        for(let i = 0; i < this.state.todoItems.length; i++) {
+            var todoItem = this.state.todoItems[i];
+            if (item.id == todoItem.id) {
+                pos = i;
+                break;
+            }
+        }
+
+        if (pos < 0) {
+            updatedItemsList = this.state.todoItems.concat([item]);
+        } else {
+            if (this.state.todoItems[pos].pendingSync) {
+                // If the item was pending sync then we pull it out
+                // of the old location and add it to the end.
+                updatedItemsList = this.state.todoItems.slice();
+                updatedItemsList.splice(pos, 1);
+                updatedItemsList.push(item);
+            } else {
+                // otherwise we update the item in place.
+                updatedItemsList = this.state.todoItems.slice();
+                updatedItemsList[pos] = item;
+            }
+        }
+        if (updatedItemsList != null) {
+            this.setState({todoItems: updatedItemsList});
+        }
     }
     destroyTodo(id) {
         let updatedItemsList = null;
