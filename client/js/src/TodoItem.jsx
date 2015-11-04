@@ -45,7 +45,7 @@ class TodoItem extends React.Component {
     }
 
     handleCheckbox(value) {
-        this.props.app.updateTodo(this.props.id, this.props.text, !this.props.completed);
+        this.props.onUpdateTodoComplete(this.props.id, !this.props.completed);
     }
 
     handleEdit() {
@@ -68,20 +68,22 @@ class TodoItem extends React.Component {
         var val = this.state.editText.trim();
         if (val) {
             this.setState({editText: val});
-            this.props.app.updateTodo(this.props.id, val, this.props.completed);
+            this.props.onUpdateTodoText(this.props.id, val);
         } else {
-            this.props.app.destroyTodo(this.props.id);
+            this.props.onDestroyTodo(this.props.id);
         }
         this.setState({editing: false});
     }
 
     handleDestroy() {
-        this.props.app.destroyTodo(this.props.id);
+        this.props.onDestroyTodo(this.props.id);
     }
 }
 TodoItem.defaultProps = {
     completed: false,
     text: null,
     id: null,
-    app: null
+    onUpdateTodoText: null,
+    onUpdateTodoComplete: null,
+    onDestroyTodo: null
 };

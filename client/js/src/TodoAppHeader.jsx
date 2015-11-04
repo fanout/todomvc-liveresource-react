@@ -11,17 +11,17 @@ class TodoAppHeader extends React.Component {
                 <h1>todos</h1>
                 <input className="new-todo"
                        value={this.state.currentValue}
-                       onChange={this.onChange.bind(this)}
-                       onKeyDown={this.onKeyDown.bind(this)}
+                       onChange={this.handleChange.bind(this)}
+                       onKeyDown={this.handleKeyDown.bind(this)}
                        placeholder="What needs to be done?"
                        autofocus={true} />
             </header>
         );
     }
-    onChange(event) {
+    handleChange(event) {
         this.setState({currentValue: event.target.value});
     }
-    onKeyDown(event) {
+    handleKeyDown(event) {
         if (event.keyCode !== Constants.ENTER_KEY) {
             return;
         }
@@ -31,11 +31,11 @@ class TodoAppHeader extends React.Component {
         var val = this.state.currentValue.trim();
 
         if (val) {
-            this.props.app.addTodo(val);
+            this.props.onCreateTodo(val);
             this.setState({currentValue: ''});
         }
     }
 }
 TodoAppHeader.defaultProps = {
-    app: null
+    onCreateTodo: null
 };

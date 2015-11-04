@@ -151,17 +151,18 @@ var TodoApp = (function (_React$Component) {
             return React.createElement(
                 'section',
                 { className: 'todoapp' },
-                React.createElement(TodoAppHeader, { app: this }),
-                filteredTodoItems.length > 0 ? React.createElement(TodoAppMain, { app: this,
-                    todoItems: filteredTodoItems,
+                React.createElement(TodoAppHeader, { onCreateTodo: this.onCreateTodo.bind(this) }),
+                filteredTodoItems.length > 0 ? React.createElement(TodoAppMain, { todoItems: filteredTodoItems,
                     activeTodosCount: activeTodosCount,
-                    onBeginEdit: this.onBeginEdit.bind(this)
+                    onUpdateTodoText: this.onUpdateTodoText.bind(this),
+                    onUpdateTodoComplete: this.onUpdateTodoComplete.bind(this),
+                    onDestroyTodo: this.onDestroyTodo.bind(this),
+                    onToggleAll: this.onToggleAll.bind(this)
                 }) : null,
-                activeTodosCount > 0 || completedTodosCount > 0 ? React.createElement(TodoAppFooter, { app: this,
-                    mode: this.state.mode,
+                activeTodosCount > 0 || completedTodosCount > 0 ? React.createElement(TodoAppFooter, { mode: this.state.mode,
                     activeTodosCount: activeTodosCount,
                     completedTodosCount: activeTodosCount,
-                    onClearCompleted: this.onClearCompleted
+                    onClearCompleted: this.onClearCompleted.bind(this)
                 }) : null
             );
         }
@@ -172,27 +173,34 @@ var TodoApp = (function (_React$Component) {
             this.setState({ todoItems: todoItems });
         }
     }, {
-        key: 'onBeginEdit',
-        value: function onBeginEdit(id) {}
-    }, {
-        key: 'addTodo',
-        value: function addTodo(text) {
-            console.log('add text: ' + text);
+        key: 'onCreateTodo',
+        value: function onCreateTodo(value) {
+            console.log('onCreateTodo (value: ' + value + ')');
         }
     }, {
-        key: 'updateTodo',
-        value: function updateTodo(id, text, completed) {
-            console.log('update id: ' + id + ' text: ' + text + ' completed: ' + completed);
+        key: 'onUpdateTodoText',
+        value: function onUpdateTodoText(id, text) {
+            console.log('onUpdateTodoText (id: ' + id + ', text: ' + text + ')');
         }
     }, {
-        key: 'destroyTodo',
-        value: function destroyTodo(id) {
-            console.log('destroy ' + id);
+        key: 'onUpdateTodoComplete',
+        value: function onUpdateTodoComplete(id, completed) {
+            console.log('onUpdateTodoComplete (id: ' + id + ', completed: ' + completed + ')');
         }
     }, {
-        key: 'toggleAll',
-        value: function toggleAll() {
-            console.log('Toggle All Clicked!');
+        key: 'onDestroyTodo',
+        value: function onDestroyTodo(id) {
+            console.log('onDestroyTodo (id: ' + id + ')');
+        }
+    }, {
+        key: 'onToggleAll',
+        value: function onToggleAll(event) {
+            var _this3 = this;
+
+            var newValue = event.target.checked;
+            this.state.todoItems.forEach(function (item) {
+                _this3.onUpdateTodoComplete(item.id, newValue);
+            });
         }
     }, {
         key: 'onClearCompleted',
@@ -269,7 +277,7 @@ function TodoAppFooter(props) {
             "button",
             {
                 className: "clear-completed",
-                onClick: props.app.onClearCompleted.bind(props.app) },
+                onClick: props.onClearCompleted },
             "Clear completed"
         ) : null
     );
@@ -311,20 +319,20 @@ var TodoAppHeader = (function (_React$Component) {
                 ),
                 React.createElement("input", { className: "new-todo",
                     value: this.state.currentValue,
-                    onChange: this.onChange.bind(this),
-                    onKeyDown: this.onKeyDown.bind(this),
+                    onChange: this.handleChange.bind(this),
+                    onKeyDown: this.handleKeyDown.bind(this),
                     placeholder: "What needs to be done?",
                     autofocus: true })
             );
         }
     }, {
-        key: "onChange",
-        value: function onChange(event) {
+        key: "handleChange",
+        value: function handleChange(event) {
             this.setState({ currentValue: event.target.value });
         }
     }, {
-        key: "onKeyDown",
-        value: function onKeyDown(event) {
+        key: "handleKeyDown",
+        value: function handleKeyDown(event) {
             if (event.keyCode !== Constants.ENTER_KEY) {
                 return;
             }
@@ -334,7 +342,7 @@ var TodoAppHeader = (function (_React$Component) {
             var val = this.state.currentValue.trim();
 
             if (val) {
-                this.props.app.addTodo(val);
+                this.props.onCreateTodo(val);
                 this.setState({ currentValue: '' });
             }
         }
@@ -344,7 +352,7 @@ var TodoAppHeader = (function (_React$Component) {
 })(React.Component);
 
 TodoAppHeader.defaultProps = {
-    app: null
+    onCreateTodo: null
 };
 "use strict";
 
@@ -353,7 +361,7 @@ function TodoAppMain(props) {
         "section",
         { className: "main" },
         React.createElement("input", { className: "toggle-all", type: "checkbox",
-            onClick: props.app.toggleAll.bind(this),
+            onClick: props.onToggleAll,
             checked: props.activeTodosCount === 0
         }),
         React.createElement(
@@ -365,7 +373,14 @@ function TodoAppMain(props) {
             "ul",
             { className: "todo-list" },
             props.todoItems.map(function (todoItem) {
-                return React.createElement(TodoItem, { app: props.app, key: todoItem.id, id: todoItem.id, text: todoItem.text, completed: todoItem.completed });
+                return React.createElement(TodoItem, { key: todoItem.id,
+                    id: todoItem.id,
+                    text: todoItem.text,
+                    completed: todoItem.completed,
+                    onUpdateTodoText: props.onUpdateTodoText,
+                    onUpdateTodoComplete: props.onUpdateTodoComplete,
+                    onDestroyTodo: props.onDestroyTodo
+                });
             })
         )
     );
@@ -451,7 +466,7 @@ var TodoItem = (function (_React$Component) {
     }, {
         key: 'handleCheckbox',
         value: function handleCheckbox(value) {
-            this.props.app.updateTodo(this.props.id, this.props.text, !this.props.completed);
+            this.props.onUpdateTodoComplete(this.props.id, !this.props.completed);
         }
     }, {
         key: 'handleEdit',
@@ -481,16 +496,16 @@ var TodoItem = (function (_React$Component) {
             var val = this.state.editText.trim();
             if (val) {
                 this.setState({ editText: val });
-                this.props.app.updateTodo(this.props.id, val, this.props.completed);
+                this.props.onUpdateTodoText(this.props.id, val);
             } else {
-                this.props.app.destroyTodo(this.props.id);
+                this.props.onDestroyTodo(this.props.id);
             }
             this.setState({ editing: false });
         }
     }, {
         key: 'handleDestroy',
         value: function handleDestroy() {
-            this.props.app.destroyTodo(this.props.id);
+            this.props.onDestroyTodo(this.props.id);
         }
     }]);
 
@@ -501,5 +516,7 @@ TodoItem.defaultProps = {
     completed: false,
     text: null,
     id: null,
-    app: null
+    onUpdateTodoText: null,
+    onUpdateTodoComplete: null,
+    onDestroyTodo: null
 };

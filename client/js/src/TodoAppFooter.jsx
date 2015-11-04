@@ -23,7 +23,7 @@ function TodoAppFooter(props) {
             {props.completedTodosCount > 0 ? (
                 <button
                     className="clear-completed"
-                    onClick={props.app.onClearCompleted.bind(props.app)}>
+                    onClick={props.onClearCompleted}>
                     Clear completed
                 </button>
             ) : null}
