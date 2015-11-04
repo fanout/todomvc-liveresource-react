@@ -61,6 +61,9 @@ class TodoApp extends React.Component {
         var todoItems = this.state.todoItems.concat(data);
         this.setState({todoItems});
     }
+    syncItems(data) {
+        this.setState({todoItems: data});
+    }
 
     onCreateTodo(value) {
         console.log(`onCreateTodo (value: ${value})`);

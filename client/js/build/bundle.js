@@ -173,6 +173,11 @@ var TodoApp = (function (_React$Component) {
             this.setState({ todoItems: todoItems });
         }
     }, {
+        key: 'syncItems',
+        value: function syncItems(data) {
+            this.setState({ todoItems: data });
+        }
+    }, {
         key: 'onCreateTodo',
         value: function onCreateTodo(value) {
             console.log('onCreateTodo (value: ' + value + ')');
@@ -519,4 +524,48 @@ TodoItem.defaultProps = {
     onUpdateTodoText: null,
     onUpdateTodoComplete: null,
     onDestroyTodo: null
+};
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Utilities = function Utilities() {
+    _classCallCheck(this, Utilities);
+};
+
+Utilities.ajax = function (params) {
+    var method = params.method;
+    var endpoint = params.endpoint;
+    var data = params.data;
+    var beforeSend = params.beforeSend;
+    var success = params.success;
+    var error = params.error;
+
+    var request = new XMLHttpRequest();
+    request.open(method, endpoint, true);
+
+    request.onload = function () {
+        if (request.status >= 200 && request.status < 400) {
+            // Success!
+            if (success != null) {
+                success(request.responseText);
+            }
+        } else {
+            // We reached our target server, but it returned an error
+            if (error != null) {
+                error();
+            }
+        }
+    };
+
+    request.onerror = function () {
+        if (error != null) {
+            error();
+        }
+    };
+
+    if (beforeSend != null) {
+        beforeSend(request);
+    }
+    request.send(data);
 };
