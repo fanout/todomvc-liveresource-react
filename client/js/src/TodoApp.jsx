@@ -42,6 +42,7 @@ class TodoApp extends React.Component {
                     <TodoAppMain app={this}
                                  todoItems={filteredTodoItems}
                                  activeTodosCount={activeTodosCount}
+                                 onBeginEdit={this.onBeginEdit.bind(this)}
                     />
                 ): null}
                 {(activeTodosCount > 0 || completedTodosCount > 0) ? (
@@ -59,6 +60,10 @@ class TodoApp extends React.Component {
         var todoItems = this.state.todoItems.concat(data);
         this.setState({todoItems});
     }
+    onBeginEdit(id) {
+
+    }
+
     addTodo(text) {
         console.log(`add text: ${text}`);
     }

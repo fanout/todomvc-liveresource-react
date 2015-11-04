@@ -7,6 +7,7 @@ var Constants = function Constants() {
 };
 
 Constants.ENTER_KEY = 13;
+Constants.ESCAPE_KEY = 27;
 "use strict";
 
 var Footer = function Footer() {
@@ -153,7 +154,8 @@ var TodoApp = (function (_React$Component) {
                 React.createElement(TodoAppHeader, { app: this }),
                 filteredTodoItems.length > 0 ? React.createElement(TodoAppMain, { app: this,
                     todoItems: filteredTodoItems,
-                    activeTodosCount: activeTodosCount
+                    activeTodosCount: activeTodosCount,
+                    onBeginEdit: this.onBeginEdit.bind(this)
                 }) : null,
                 activeTodosCount > 0 || completedTodosCount > 0 ? React.createElement(TodoAppFooter, { app: this,
                     mode: this.state.mode,
@@ -169,6 +171,9 @@ var TodoApp = (function (_React$Component) {
             var todoItems = this.state.todoItems.concat(data);
             this.setState({ todoItems: todoItems });
         }
+    }, {
+        key: 'onBeginEdit',
+        value: function onBeginEdit(id) {}
     }, {
         key: 'addTodo',
         value: function addTodo(text) {
@@ -365,7 +370,7 @@ function TodoAppMain(props) {
         )
     );
 };
-"use strict";
+'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
@@ -384,13 +389,15 @@ var TodoItem = (function (_React$Component) {
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(TodoItem).call(this, props));
 
         _this.state = {
-            'editing': false
+            'editing': false,
+            'editText': props.text
         };
+        _this._editNode = null;
         return _this;
     }
 
     _createClass(TodoItem, [{
-        key: "buildClassNames",
+        key: 'buildClassNames',
         value: function buildClassNames() {
             var items = [];
             if (this.props.completed) {
@@ -402,46 +409,88 @@ var TodoItem = (function (_React$Component) {
             return items.length > 0 ? items.join(" ") : null;
         }
     }, {
-        key: "render",
+        key: 'render',
         value: function render() {
+            var _this2 = this;
+
             return React.createElement(
-                "li",
+                'li',
                 { className: this.buildClassNames() },
                 React.createElement(
-                    "div",
-                    { className: "view", onDoubleClick: this.onEdit.bind(this) },
-                    React.createElement("input", { className: "toggle", type: "checkbox", checked: this.props.completed ? "checked" : null, onChange: this.onCheckbox.bind(this, !this.props.completed) }),
+                    'div',
+                    { className: 'view' },
+                    React.createElement('input', { className: 'toggle', type: 'checkbox',
+                        checked: this.props.completed ? "checked" : null,
+                        onChange: this.handleCheckbox.bind(this) }),
                     React.createElement(
-                        "label",
-                        null,
+                        'label',
+                        { onDoubleClick: this.handleEdit.bind(this) },
                         this.props.text
                     ),
-                    React.createElement("button", { className: "destroy", onClick: this.onClick.bind(this) })
+                    React.createElement('button', { className: 'destroy', onClick: this.handleDestroy.bind(this) })
                 ),
-                React.createElement("input", { className: "edit", defaultValue: this.props.text, onBlur: this.onClose.bind(this), onkeypress: "" })
+                React.createElement('input', { className: 'edit',
+                    value: this.state.editText,
+                    ref: function ref(c) {
+                        return _this2._editNode = c;
+                    },
+                    onChange: this.handleChange.bind(this),
+                    onKeyDown: this.handleKeyDown.bind(this),
+                    onBlur: this.handleSubmit.bind(this)
+                })
             );
         }
     }, {
-        key: "onCheckbox",
-        value: function onCheckbox(value) {
-            this.props.app.updateTodo(this.props.id, this.props.text, value);
+        key: 'componentDidUpdate',
+        value: function componentDidUpdate(prevProps, prevState) {
+            if (!prevState.editing && this.state.editing) {
+                this._editNode.focus();
+                this._editNode.setSelectionRange(node.value.length, node.value.length);
+            }
         }
     }, {
-        key: "onClick",
-        value: function onClick() {
-            this.props.app.destroyTodo(this.props.id);
+        key: 'handleCheckbox',
+        value: function handleCheckbox(value) {
+            this.props.app.updateTodo(this.props.id, this.props.text, !this.props.completed);
         }
     }, {
-        key: "onEdit",
-        value: function onEdit() {
-            console.log("doubleclick");
+        key: 'handleEdit',
+        value: function handleEdit() {
             this.setState({ editing: true });
         }
     }, {
-        key: "onClose",
-        value: function onClose(event) {
+        key: 'handleChange',
+        value: function handleChange(event) {
+            if (this.state.editing) {
+                this.setState({ editText: event.target.value });
+            }
+        }
+    }, {
+        key: 'handleKeyDown',
+        value: function handleKeyDown(event) {
+            if (event.which === Constants.ESCAPE_KEY) {
+                this.setState({ editText: this.props.text });
+                this.setState({ editing: false });
+            } else if (event.which === Constants.ENTER_KEY) {
+                this.handleSubmit(event);
+            }
+        }
+    }, {
+        key: 'handleSubmit',
+        value: function handleSubmit(event) {
+            var val = this.state.editText.trim();
+            if (val) {
+                this.setState({ editText: val });
+                this.props.app.updateTodo(this.props.id, val, this.props.completed);
+            } else {
+                this.props.app.destroyTodo(this.props.id);
+            }
             this.setState({ editing: false });
-            this.props.app.updateTodo(this.props.id, event.target.value, this.props.completed);
+        }
+    }, {
+        key: 'handleDestroy',
+        value: function handleDestroy() {
+            this.props.app.destroyTodo(this.props.id);
         }
     }]);
 
