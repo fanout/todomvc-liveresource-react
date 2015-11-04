@@ -50,7 +50,7 @@ class TodoApp extends React.Component {
                 {(activeTodosCount > 0 || completedTodosCount > 0) ? (
                     <TodoAppFooter mode={this.state.mode}
                                    activeTodosCount={activeTodosCount}
-                                   completedTodosCount={activeTodosCount}
+                                   completedTodosCount={completedTodosCount}
                                    onClearCompleted={this.onClearCompleted.bind(this)}
                     />
                 ) : null}
