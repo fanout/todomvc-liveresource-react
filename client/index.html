@@ -32,30 +32,84 @@
         <script>
             var API_ENDPOINT = "http://todomvc-api.liveresource.org/todos/";
 
-            var main = ReactDOM.render(React.createElement(Main), document.getElementById('main'));
+            var domNode = document.getElementById('main');
+            var main = ReactDOM.render(React.createElement(Main, {eventNode: domNode}), domNode);
             var todoApp = main.getTodoApp();
 
             /* Supposed to do this here */
-            /*
             var liveResource = new LiveResource(API_ENDPOINT);
-            liveResource.on("ready", function(data) {
-                todoApp.syncItems(data);
+            liveResource.on("ready", function() {
+                console.log("ready");
+                Utilities.ajax({
+                    method: 'GET',
+                    endpoint: API_ENDPOINT,
+                    success: function(data) {
+                        var responses = JSON.parse(data);
+                        todoApp.syncItems(responses);
+                    }
+                });
             });
-            */
-
-            Utilities.ajax({
-                method: 'GET',
-                endpoint: API_ENDPOINT,
-                success: function(data) {
-                    var responses = JSON.parse(data);
-                    todoApp.syncItems(responses);
-                }
+            liveResource.on("child-added", function(item) {
+                console.log("child-added");
+                console.log(item);
+                todoApp.addItem(item);
+            });
+            liveResource.on("child-removed", function(item) {
+                console.log("child-removed");
+                console.log(item);
+                todoApp.removeItem(item.id);
             });
 
-            /*
-            todoApp.addItems([{id: 1, text: "ABC", completed: false}]);
-            todoApp.addItems([{id: 2, text: "DEF", completed: true}]);
-            */
+            /* These will hook up to ajax endpoints */
+            domNode.addEventListener("createTodo", function(e) {
+                var item = e.detail.item;
+                console.log("createTodo")
+                console.log(item);
+
+                Utilities.ajax({
+                    method: 'POST',
+                    endpoint: API_ENDPOINT,
+                    data: JSON.stringify(item),
+                    success: function(data) {
+                        var responses = JSON.parse(data);
+                        item.id = responses.id;
+                        todoApp.forceUpdate();
+                    }
+                });
+            });
+            domNode.addEventListener("updateTodoText", function(e) {
+                var item = e.detail.item;
+                console.log("updateTodoText");
+                console.log(item);
+
+                Utilities.ajax({
+                    method: 'PUT',
+                    endpoint: API_ENDPOINT + item.id + "/",
+                    data: JSON.stringify(item)
+                });
+            });
+            domNode.addEventListener("updateTodoComplete", function(e) {
+                var item = e.detail.item;
+                console.log("updateTodoComplete");
+                console.log(item);
+
+                Utilities.ajax({
+                    method: 'PUT',
+                    endpoint: API_ENDPOINT + item.id + "/",
+                    data: JSON.stringify(item)
+                });
+            });
+            domNode.addEventListener("destroyTodo", function(e) {
+                var item = e.detail.item;
+                console.log("destroyTodo");
+                console.log(item);
+
+                Utilities.ajax({
+                    method: 'DELETE',
+                    endpoint: API_ENDPOINT + item.id + "/",
+                    data: JSON.stringify(item)
+                });
+            });
 
         </script>
 

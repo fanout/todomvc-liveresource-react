@@ -57,25 +57,127 @@ class TodoApp extends React.Component {
             </section>
         );
     }
-    addItems(data) {
-        var todoItems = this.state.todoItems.concat(data);
-        this.setState({todoItems});
+    addItem(item, pendingSync) {
+        // If "pending sync" is true then the items we
+        // are setting are not "real" but they are placeholders
+        // until we get real stuff from the server
+        let updatedItemsList = null;
+
+        let pos = -1;
+        let itemWasPendingSync = false;
+        for(let i = 0; i < this.state.todoItems.length; i++) {
+            var todoItem = this.state.todoItems[i];
+            if (item.id == todoItem.id) {
+                pos = i;
+                itemWasPendingSync = todoItem.pendingSync;
+                break;
+            }
+        }
+
+        if (pos < 0) {
+            item.pendingSync = pendingSync;
+            updatedItemsList = this.state.todoItems.concat([item]);
+        } else {
+            if (!itemWasPendingSync && pendingSync) {
+                // If the item was not pending sync and
+                // this current one wants to be pending
+                // sync, we want to discard this
+            } else if (itemWasPendingSync && !pendingSync) {
+                // If the item was pending sync and we have
+                // a new one that isn't then we pull it out
+                // of the old location and add it to the
+                // end.
+                updatedItemsList = this.state.todoItems.slice();
+                updatedItemsList.splice(pos, 1);
+                updatedItemsList.push(item);
+            } else {
+                // In all other cases we update the item.
+                updatedItemsList = this.state.todoItems.slice();
+                updatedItemsList[pos] = item;
+            }
+        }
+        if (updatedItemsList != null) {
+            this.setState({todoItems: updatedItemsList});
+        }
     }
     syncItems(data) {
-        this.setState({todoItems: data});
+        var mappedIds = [];
+        var mappedItems = {};
+        data.forEach(item => {
+            if (item.id in mappedItems) {
+                if (item.deleted) {
+                    delete mappedItems[item.id];
+                } else {
+                    mappedItems[item.id] = item;
+                }
+            } else {
+                mappedIds.push(item.id);
+                mappedItems[item.id] = item;
+            }
+        });
+
+        var todoItems = [];
+        mappedIds.forEach(id => {
+            if (id in mappedItems) {
+                todoItems.push(mappedItems[id]);
+            }
+        });
+
+        this.setState({todoItems: todoItems});
+        this.forceUpdate();
     }
 
-    onCreateTodo(value) {
-        console.log(`onCreateTodo (value: ${value})`);
+    createTodo(text) {
+        var newItem = {
+            id: null,
+            text: text,
+            completed: false
+        };
+        this.setState({todoItems: this.state.todoItems.concat([newItem])});
+        return newItem;
+    }
+    destroyTodo(id) {
+        let updatedItemsList = null;
+
+        let pos = -1;
+        for(let i = 0; i < this.state.todoItems.length; i++) {
+            var todoItem = this.state.todoItems[i];
+            if (id == todoItem.id) {
+                pos = i;
+                break;
+            }
+        }
+
+        if (pos >= 0) {
+            updatedItemsList = this.state.todoItems.slice();
+            updatedItemsList.splice(pos, 1);
+        }
+        if (updatedItemsList != null) {
+            this.setState({todoItems: updatedItemsList});
+        }
+    }
+
+    fireEvent(name, detail) {
+        if (this.props.eventNode != null) {
+            // create and dispatch the event
+            var event = new CustomEvent(name, {detail});
+            this.props.eventNode.dispatchEvent(event);
+        }
+    }
+
+    onCreateTodo(text) {
+        var item = this.createTodo(text);
+        this.fireEvent("createTodo", {item});
     }
     onUpdateTodoText(id, text) {
-        console.log(`onUpdateTodoText (id: ${id}, text: ${text})`);
+        this.fireEvent("updateTodoText", {item: {id, text}});
     }
     onUpdateTodoComplete(id, completed) {
-        console.log(`onUpdateTodoComplete (id: ${id}, completed: ${completed})`);
+        this.fireEvent("updateTodoComplete", {item: {id, completed}});
     }
     onDestroyTodo(id) {
-        console.log(`onDestroyTodo (id: ${id})`);
+        this.destroyTodo(id);
+        this.fireEvent("destroyTodo", {item: {id}});
     }
     onToggleAll(event) {
         var newValue = event.target.checked;
@@ -85,10 +187,16 @@ class TodoApp extends React.Component {
     }
 
     onClearCompleted() {
-        console.log(`Clear all Clicked!`)
+        this.state.todoItems.forEach(item => {
+            if (item.completed) {
+                this.onDestroyTodo(item.id);
+            }
+        });
     }
 }
-
+TodoApp.defaultProps = {
+    eventNode: null
+};
 TodoApp.MODES = {
     ALL: 'all',
     ACTIVE: 'active',
