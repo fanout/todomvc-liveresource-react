@@ -36,10 +36,9 @@
             var main = ReactDOM.render(React.createElement(Main, {eventNode: domNode}), domNode);
             var todoApp = main.getTodoApp();
 
-            /* Supposed to do this here */
             var liveResource = new LiveResource(API_ENDPOINT);
             liveResource.on("ready", function() {
-                console.log("ready");
+                // console.log("ready");
                 Utilities.ajax({
                     method: 'GET',
                     endpoint: API_ENDPOINT,
@@ -50,22 +49,21 @@
                 });
             });
             liveResource.on("child-added", function(item) {
-                console.log("child-added");
-                console.log(item);
+                // console.log("child-added");
+                // console.log(item);
                 todoApp.addTodo(item);
             });
             liveResource.on("child-deleted", function(item) {
-                console.log("child-deleted");
-                console.log(item);
+                // console.log("child-deleted");
+                // console.log(item);
                 todoApp.destroyTodo(item.id);
             });
 
             /* These will hook up to ajax endpoints */
             domNode.addEventListener("createTodo", function(e) {
                 var item = e.detail.item;
-                console.log("createTodo")
-                console.log(item);
-
+                // console.log("createTodo")
+                // console.log(item);
                 Utilities.ajax({
                     method: 'POST',
                     endpoint: API_ENDPOINT,
@@ -79,9 +77,8 @@
             });
             domNode.addEventListener("updateTodoText", function(e) {
                 var item = e.detail.item;
-                console.log("updateTodoText");
-                console.log(item);
-
+                // console.log("updateTodoText");
+                // console.log(item);
                 Utilities.ajax({
                     method: 'PUT',
                     endpoint: API_ENDPOINT + item.id + "/",
@@ -90,9 +87,8 @@
             });
             domNode.addEventListener("updateTodoComplete", function(e) {
                 var item = e.detail.item;
-                console.log("updateTodoComplete");
-                console.log(item);
-
+                // console.log("updateTodoComplete");
+                // console.log(item);
                 Utilities.ajax({
                     method: 'PUT',
                     endpoint: API_ENDPOINT + item.id + "/",
@@ -101,9 +97,8 @@
             });
             domNode.addEventListener("destroyTodo", function(e) {
                 var item = e.detail.item;
-                console.log("destroyTodo");
-                console.log(item);
-
+                // console.log("destroyTodo");
+                // console.log(item);
                 Utilities.ajax({
                     method: 'DELETE',
                     endpoint: API_ENDPOINT + item.id + "/",
