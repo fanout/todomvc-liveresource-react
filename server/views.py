@@ -29,6 +29,9 @@ def _publish_item(item, id, prev_id):
 		 id=id, prev_id=prev_id)
 
 def todos(request):
+	if request.method == 'OPTIONS':
+		return HttpResponse()
+
 	if request.method == 'HEAD':
 		last_cursor = TodoItem.get_last_cursor()
 		resp = HttpResponse()
@@ -68,6 +71,9 @@ def todos(request):
 		return HttpResponseNotAllowed(['HEAD', 'GET', 'POST'])
 
 def todos_item(request, todo_id):
+	if request.method == 'OPTIONS':
+		return HttpResponse()
+
 	try:
 		i = TodoItem.get(todo_id)
 	except TodoItem.DoesNotExist:
