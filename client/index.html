@@ -30,21 +30,32 @@
 
         <script src="node_modules/babel-core/browser.min.js"></script>
         <script>
-            // var API_ENDPOINT = "http://todomvc-api.liveresource.org/todos/";
+            var API_ENDPOINT = "http://todomvc-api.liveresource.org/todos/";
 
             var main = ReactDOM.render(React.createElement(Main), document.getElementById('main'));
             var todoApp = main.getTodoApp();
 
+            /* Supposed to do this here */
             /*
             var liveResource = new LiveResource(API_ENDPOINT);
             liveResource.on("ready", function(data) {
-                todoApp.addItems(data);
+                todoApp.syncItems(data);
             });
             */
 
+            Utilities.ajax({
+                method: 'GET',
+                endpoint: API_ENDPOINT,
+                success: function(data) {
+                    var responses = JSON.parse(data);
+                    todoApp.syncItems(responses);
+                }
+            });
+
+            /*
             todoApp.addItems([{id: 1, text: "ABC", completed: false}]);
             todoApp.addItems([{id: 2, text: "DEF", completed: true}]);
-
+            */
 
         </script>
 

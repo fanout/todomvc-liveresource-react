@@ -37,14 +37,21 @@ class TodoApp extends React.Component {
 
         return (
             <section className="todoapp">
-                <TodoAppHeader app={this} />
-                <TodoAppMain app={this} todoItems={filteredTodoItems} />
+                <TodoAppHeader onCreateTodo={this.onCreateTodo.bind(this)} />
+                {filteredTodoItems.length > 0 ? (
+                    <TodoAppMain todoItems={filteredTodoItems}
+                                 activeTodosCount={activeTodosCount}
+                                 onUpdateTodoText={this.onUpdateTodoText.bind(this)}
+                                 onUpdateTodoComplete={this.onUpdateTodoComplete.bind(this)}
+                                 onDestroyTodo={this.onDestroyTodo.bind(this)}
+                                 onToggleAll={this.onToggleAll.bind(this)}
+                    />
+                ): null}
                 {(activeTodosCount > 0 || completedTodosCount > 0) ? (
-                    <TodoAppFooter app={this}
-                                   mode={this.state.mode}
+                    <TodoAppFooter mode={this.state.mode}
                                    activeTodosCount={activeTodosCount}
                                    completedTodosCount={activeTodosCount}
-                                   onClearCompleted={this.onClearCompleted}
+                                   onClearCompleted={this.onClearCompleted.bind(this)}
                     />
                 ) : null}
             </section>
@@ -54,22 +61,34 @@ class TodoApp extends React.Component {
         var todoItems = this.state.todoItems.concat(data);
         this.setState({todoItems});
     }
-    addTodo(text) {
-        console.log(`add text: ${text}`);
+    syncItems(data) {
+        this.setState({todoItems: data});
     }
-    updateTodo(id, text, completed) {
-        console.log(`update id: ${id} text: ${text} completed: ${completed}`);
+
+    onCreateTodo(value) {
+        console.log(`onCreateTodo (value: ${value})`);
     }
-    destroyTodo(id) {
-        console.log(`destroy ${id}`);
+    onUpdateTodoText(id, text) {
+        console.log(`onUpdateTodoText (id: ${id}, text: ${text})`);
     }
-    toggleAll() {
-        console.log(`Toggle All Clicked!`);
+    onUpdateTodoComplete(id, completed) {
+        console.log(`onUpdateTodoComplete (id: ${id}, completed: ${completed})`);
     }
+    onDestroyTodo(id) {
+        console.log(`onDestroyTodo (id: ${id})`);
+    }
+    onToggleAll(event) {
+        var newValue = event.target.checked;
+        this.state.todoItems.forEach(item => {
+            this.onUpdateTodoComplete(item.id, newValue);
+        });
+    }
+
     onClearCompleted() {
         console.log(`Clear all Clicked!`)
     }
 }
+
 TodoApp.MODES = {
     ALL: 'all',
     ACTIVE: 'active',
