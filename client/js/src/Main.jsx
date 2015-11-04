@@ -1,12 +1,12 @@
 class Main extends React.Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this._todoApp = null;
     }
     render() {
         return (
             <div>
-                <TodoApp ref={c => this._todoApp = c} />
+                <TodoApp eventNode={this.props.eventNode} ref={c => this._todoApp = c} />
                 <Footer />
             </div>
         )
@@ -15,4 +15,6 @@ class Main extends React.Component {
         return this._todoApp;
     }
 }
-Main.defaultProps = {};
+Main.defaultProps = {
+    eventNode: null
+};

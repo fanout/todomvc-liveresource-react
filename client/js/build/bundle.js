@@ -10,6 +10,27 @@ Constants.ENTER_KEY = 13;
 Constants.ESCAPE_KEY = 27;
 "use strict";
 
+try {
+    new CustomEvent("test");
+} catch (e) {
+    var CustomEvent = function CustomEvent(event, params) {
+        var evt;
+        params = params || {
+            bubbles: false,
+            cancelable: false,
+            detail: undefined
+        };
+
+        evt = document.createEvent("CustomEvent");
+        evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+        return evt;
+    };
+
+    CustomEvent.prototype = window.Event.prototype;
+    window.CustomEvent = CustomEvent; // expose definition to window
+}
+"use strict";
+
 var Footer = function Footer() {
     return React.createElement(
         "footer",
@@ -54,10 +75,10 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Main = (function (_React$Component) {
     _inherits(Main, _React$Component);
 
-    function Main() {
+    function Main(props) {
         _classCallCheck(this, Main);
 
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Main).call(this));
+        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Main).call(this, props));
 
         _this._todoApp = null;
         return _this;
@@ -71,7 +92,7 @@ var Main = (function (_React$Component) {
             return React.createElement(
                 "div",
                 null,
-                React.createElement(TodoApp, { ref: function ref(c) {
+                React.createElement(TodoApp, { eventNode: this.props.eventNode, ref: function ref(c) {
                         return _this2._todoApp = c;
                     } }),
                 React.createElement(Footer, null)
@@ -87,7 +108,9 @@ var Main = (function (_React$Component) {
     return Main;
 })(React.Component);
 
-Main.defaultProps = {};
+Main.defaultProps = {
+    eventNode: null
+};
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -167,35 +190,141 @@ var TodoApp = (function (_React$Component) {
             );
         }
     }, {
-        key: 'addItems',
-        value: function addItems(data) {
-            var todoItems = this.state.todoItems.concat(data);
-            this.setState({ todoItems: todoItems });
+        key: 'addItem',
+        value: function addItem(item, pendingSync) {
+            // If "pending sync" is true then the items we
+            // are setting are not "real" but they are placeholders
+            // until we get real stuff from the server
+            var updatedItemsList = null;
+
+            var pos = -1;
+            var itemWasPendingSync = false;
+            for (var i = 0; i < this.state.todoItems.length; i++) {
+                var todoItem = this.state.todoItems[i];
+                if (item.id == todoItem.id) {
+                    pos = i;
+                    itemWasPendingSync = todoItem.pendingSync;
+                    break;
+                }
+            }
+
+            if (pos < 0) {
+                item.pendingSync = pendingSync;
+                updatedItemsList = this.state.todoItems.concat([item]);
+            } else {
+                if (!itemWasPendingSync && pendingSync) {
+                    // If the item was not pending sync and
+                    // this current one wants to be pending
+                    // sync, we want to discard this
+                } else if (itemWasPendingSync && !pendingSync) {
+                        // If the item was pending sync and we have
+                        // a new one that isn't then we pull it out
+                        // of the old location and add it to the
+                        // end.
+                        updatedItemsList = this.state.todoItems.slice();
+                        updatedItemsList.splice(pos, 1);
+                        updatedItemsList.push(item);
+                    } else {
+                        // In all other cases we update the item.
+                        updatedItemsList = this.state.todoItems.slice();
+                        updatedItemsList[pos] = item;
+                    }
+            }
+            if (updatedItemsList != null) {
+                this.setState({ todoItems: updatedItemsList });
+            }
         }
     }, {
         key: 'syncItems',
         value: function syncItems(data) {
-            this.setState({ todoItems: data });
+            var mappedIds = [];
+            var mappedItems = {};
+            data.forEach(function (item) {
+                if (item.id in mappedItems) {
+                    if (item.deleted) {
+                        delete mappedItems[item.id];
+                    } else {
+                        mappedItems[item.id] = item;
+                    }
+                } else {
+                    mappedIds.push(item.id);
+                    mappedItems[item.id] = item;
+                }
+            });
+
+            var todoItems = [];
+            mappedIds.forEach(function (id) {
+                if (id in mappedItems) {
+                    todoItems.push(mappedItems[id]);
+                }
+            });
+
+            this.setState({ todoItems: todoItems });
+            this.forceUpdate();
+        }
+    }, {
+        key: 'createTodo',
+        value: function createTodo(text) {
+            var newItem = {
+                id: null,
+                text: text,
+                completed: false
+            };
+            this.setState({ todoItems: this.state.todoItems.concat([newItem]) });
+            return newItem;
+        }
+    }, {
+        key: 'destroyTodo',
+        value: function destroyTodo(id) {
+            var updatedItemsList = null;
+
+            var pos = -1;
+            for (var i = 0; i < this.state.todoItems.length; i++) {
+                var todoItem = this.state.todoItems[i];
+                if (id == todoItem.id) {
+                    pos = i;
+                    break;
+                }
+            }
+
+            if (pos >= 0) {
+                updatedItemsList = this.state.todoItems.slice();
+                updatedItemsList.splice(pos, 1);
+            }
+            if (updatedItemsList != null) {
+                this.setState({ todoItems: updatedItemsList });
+            }
+        }
+    }, {
+        key: 'fireEvent',
+        value: function fireEvent(name, detail) {
+            if (this.props.eventNode != null) {
+                // create and dispatch the event
+                var event = new CustomEvent(name, { detail: detail });
+                this.props.eventNode.dispatchEvent(event);
+            }
         }
     }, {
         key: 'onCreateTodo',
-        value: function onCreateTodo(value) {
-            console.log('onCreateTodo (value: ' + value + ')');
+        value: function onCreateTodo(text) {
+            var item = this.createTodo(text);
+            this.fireEvent("createTodo", { item: item });
         }
     }, {
         key: 'onUpdateTodoText',
         value: function onUpdateTodoText(id, text) {
-            console.log('onUpdateTodoText (id: ' + id + ', text: ' + text + ')');
+            this.fireEvent("updateTodoText", { item: { id: id, text: text } });
         }
     }, {
         key: 'onUpdateTodoComplete',
         value: function onUpdateTodoComplete(id, completed) {
-            console.log('onUpdateTodoComplete (id: ' + id + ', completed: ' + completed + ')');
+            this.fireEvent("updateTodoComplete", { item: { id: id, completed: completed } });
         }
     }, {
         key: 'onDestroyTodo',
         value: function onDestroyTodo(id) {
-            console.log('onDestroyTodo (id: ' + id + ')');
+            this.destroyTodo(id);
+            this.fireEvent("destroyTodo", { item: { id: id } });
         }
     }, {
         key: 'onToggleAll',
@@ -210,13 +339,22 @@ var TodoApp = (function (_React$Component) {
     }, {
         key: 'onClearCompleted',
         value: function onClearCompleted() {
-            console.log('Clear all Clicked!');
+            var _this4 = this;
+
+            this.state.todoItems.forEach(function (item) {
+                if (item.completed) {
+                    _this4.onDestroyTodo(item.id);
+                }
+            });
         }
     }]);
 
     return TodoApp;
 })(React.Component);
 
+TodoApp.defaultProps = {
+    eventNode: null
+};
 TodoApp.MODES = {
     ALL: 'all',
     ACTIVE: 'active',
