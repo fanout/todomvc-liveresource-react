@@ -5,12 +5,15 @@ from gripcontrol import HttpResponseFormat, Channel
 from django_grip import set_hold_longpoll, publish
 from models import TodoItem
 
-def _json_response(data, pretty=True):
+def _json_data(data, pretty=True):
 	if pretty:
 		indent = 4
 	else:
 		indent = None
-	return HttpResponse(json.dumps(data, indent=indent) + '\n',
+	return json.dumps(data, indent=indent)
+
+def _json_response(data):
+	return HttpResponse(_json_data(data) + '\n',
 		content_type='application/json')
 
 def _list_response(items):
@@ -20,7 +23,7 @@ def _item_response(item):
 	return _json_response(item.to_data())
 
 def _publish_item(item, id, prev_id):
-	body = json.dumps([item.to_data()]) + '\n'
+	body = _json_data([item.to_data()]) + '\n'
 	headers = {'Link': '</todos/?after=%s>; rel=changes-wait' % prev_id}
 	publish('todos', HttpResponseFormat(headers=headers, body=body),
 		 id=id, prev_id=prev_id)
