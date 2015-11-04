@@ -151,7 +151,10 @@ var TodoApp = (function (_React$Component) {
                 'section',
                 { className: 'todoapp' },
                 React.createElement(TodoAppHeader, { app: this }),
-                React.createElement(TodoAppMain, { app: this, todoItems: filteredTodoItems }),
+                filteredTodoItems.length > 0 ? React.createElement(TodoAppMain, { app: this,
+                    todoItems: filteredTodoItems,
+                    activeTodosCount: activeTodosCount
+                }) : null,
                 activeTodosCount > 0 || completedTodosCount > 0 ? React.createElement(TodoAppFooter, { app: this,
                     mode: this.state.mode,
                     activeTodosCount: activeTodosCount,
@@ -340,62 +343,27 @@ TodoAppHeader.defaultProps = {
 };
 "use strict";
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var TodoAppMain = (function (_React$Component) {
-    _inherits(TodoAppMain, _React$Component);
-
-    function TodoAppMain(props) {
-        _classCallCheck(this, TodoAppMain);
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(TodoAppMain).call(this, props));
-    }
-
-    _createClass(TodoAppMain, [{
-        key: "render",
-        value: function render() {
-            var _this2 = this;
-
-            /* This section should be hidden by default and shown when there are todos */
-            if (this.props.todoItems.length == 0) {
-                return null;
-            }
-            return React.createElement(
-                "section",
-                { className: "main" },
-                React.createElement("input", { className: "toggle-all", type: "checkbox", onClick: this.onToggleAll.bind(this) }),
-                React.createElement(
-                    "label",
-                    { htmlFor: "toggle-all" },
-                    "Mark all as complete"
-                ),
-                React.createElement(
-                    "ul",
-                    { className: "todo-list" },
-                    this.props.todoItems.map(function (todoItem) {
-                        return React.createElement(TodoItem, { app: _this2.props.app, key: todoItem.id, id: todoItem.id, text: todoItem.text, completed: todoItem.completed });
-                    })
-                )
-            );
-        }
-    }, {
-        key: "onToggleAll",
-        value: function onToggleAll() {
-            this.props.app.toggleAll();
-        }
-    }]);
-
-    return TodoAppMain;
-})(React.Component);
-
-TodoAppMain.defaultProps = {
-    app: null
+function TodoAppMain(props) {
+    return React.createElement(
+        "section",
+        { className: "main" },
+        React.createElement("input", { className: "toggle-all", type: "checkbox",
+            onClick: props.app.toggleAll.bind(this),
+            checked: props.activeTodosCount === 0
+        }),
+        React.createElement(
+            "label",
+            { htmlFor: "toggle-all" },
+            "Mark all as complete"
+        ),
+        React.createElement(
+            "ul",
+            { className: "todo-list" },
+            props.todoItems.map(function (todoItem) {
+                return React.createElement(TodoItem, { app: props.app, key: todoItem.id, id: todoItem.id, text: todoItem.text, completed: todoItem.completed });
+            })
+        )
+    );
 };
 "use strict";
 

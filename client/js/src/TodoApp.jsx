@@ -38,7 +38,12 @@ class TodoApp extends React.Component {
         return (
             <section className="todoapp">
                 <TodoAppHeader app={this} />
-                <TodoAppMain app={this} todoItems={filteredTodoItems} />
+                {filteredTodoItems.length > 0 ? (
+                    <TodoAppMain app={this}
+                                 todoItems={filteredTodoItems}
+                                 activeTodosCount={activeTodosCount}
+                    />
+                ): null}
                 {(activeTodosCount > 0 || completedTodosCount > 0) ? (
                     <TodoAppFooter app={this}
                                    mode={this.state.mode}
