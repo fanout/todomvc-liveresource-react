@@ -24,7 +24,7 @@ def _item_response(item):
 
 def _publish_item(item, id, prev_id):
 	body = _json_data([item.to_data()]) + '\n'
-	headers = {'Link': '</todos/?after=%s>; rel=changes-wait' % prev_id}
+	headers = {'Link': '</todos/?after=%s>; rel=changes-wait' % id}
 	publish('todos', HttpResponseFormat(headers=headers, body=body),
 		 id=id, prev_id=prev_id)
 
