@@ -113,9 +113,15 @@ class TodoItem(object):
 			version = 0
 		event_ids = r.zrangebyscore('todos-events-order-created', '-inf', '+inf')
 		items = []
-		for event_id in event_ids:
+		item_ids = set()
+		for event_id in reversed(event_ids):
 			i = TodoItem.loads(r.hget('todos-events', event_id))
+			if i.id in item_ids:
+				# only keep the most recent event per item
+				continue
 			items.append(i)
+			item_ids.add(i.id)
+		items.reverse()
 		return (items, Cursor(str(version)))
 
 	# return (items, last cursor)
