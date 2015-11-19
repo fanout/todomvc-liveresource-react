@@ -1,7 +1,6 @@
 import os
 import urlparse
 import json
-import uuid
 import redis
 
 redis_url = os.environ.get('REDISCLOUD_URL')
@@ -20,6 +19,9 @@ class TodoItem(object):
 	class DoesNotExist(Exception):
 		pass
 
+	class LimitError(Exception):
+		pass
+
 	def __init__(self, id=None, text='', completed=False):
 		self.id = id
 		self.deleted = False
@@ -29,7 +31,10 @@ class TodoItem(object):
 	# return cursor after write
 	def save(self, fields=None):
 		if not self.id:
-			self.id = str(uuid.uuid4())
+			if int(r.hlen('todos-items')) >= 50:
+				raise TodoItem.LimitError('maximum item count reached')
+
+			self.id = str(r.incr('todos-auto-id'))
 			r.hset('todos-items', self.id, self.dumps())
 			version = int(r.incr('todos-events-version'))
 			prev_version = version - 1

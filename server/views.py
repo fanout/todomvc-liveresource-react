@@ -1,6 +1,6 @@
 import json
 from django.http import HttpResponse, HttpResponseBadRequest, \
-	HttpResponseNotAllowed, HttpResponseNotFound
+	HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseNotFound
 from django.core.urlresolvers import reverse
 from gripcontrol import HttpResponseFormat, HttpStreamFormat, Channel
 from django_grip import set_hold_longpoll, set_hold_stream, publish
@@ -75,9 +75,12 @@ def todos(request):
 			i.text = params['text']
 		if 'completed' in params:
 			if not isinstance(params['completed'], bool):
-				raise HttpResponseBadRequest()
+				return HttpResponseBadRequest('completed must be a bool\n', content_type='text/plain')
 			i.completed = params['completed']
-		cursor = i.save()
+		try:
+			cursor = i.save()
+		except TodoItem.LimitError:
+			return HttpResponseForbidden('limit reached\n', content_type='text/plain')
 		if cursor.cur != cursor.prev:
 			_publish_item(i, cursor)
 		resp = _item_response(i, status=201)
