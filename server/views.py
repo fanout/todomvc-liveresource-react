@@ -25,7 +25,9 @@ def _item_response(item, status=200):
 
 def _publish_item(item, cursor):
 	body = _json_data([item.to_data()]) + '\n'
-	stream_content = _json_data(item.to_data(), False) + '\n'
+	stream_data = item.to_data()
+	stream_data['change-id'] = str(cursor.cur)
+	stream_content = _json_data(stream_data, False) + '\n'
 	headers = {'Link': '</todos/?after=%s>; rel=changes-wait' % cursor.cur}
 	formats = []
 	formats.append(HttpResponseFormat(headers=headers, body=body))
