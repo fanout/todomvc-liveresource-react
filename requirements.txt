@@ -7,7 +7,9 @@ django-grip==1.6.1
 gripcontrol==2.4.2
 gunicorn==19.3.0
 pubcontrol==2.2.7
+python-dateutil==2.4.2
 redis==2.10.5
 requests==2.8.1
+six==1.10.0
 static3==0.6.1
 wsgiref==0.1.2
