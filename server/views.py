@@ -1,6 +1,7 @@
 import json
 from django.http import HttpResponse, HttpResponseBadRequest, \
 	HttpResponseNotAllowed, HttpResponseNotFound
+from django.core.urlresolvers import reverse
 from gripcontrol import HttpResponseFormat, Channel
 from django_grip import set_hold_longpoll, publish
 from models import TodoItem
@@ -12,21 +13,21 @@ def _json_data(data, pretty=True):
 		indent = None
 	return json.dumps(data, indent=indent)
 
-def _json_response(data):
-	return HttpResponse(_json_data(data) + '\n',
+def _json_response(data, status=200):
+	return HttpResponse(_json_data(data) + '\n', status=status,
 		content_type='application/json')
 
 def _list_response(items):
 	return _json_response([i.to_data() for i in items])
 
-def _item_response(item):
-	return _json_response(item.to_data())
+def _item_response(item, status=200):
+	return _json_response(item.to_data(), status=status)
 
-def _publish_item(item, id, prev_id):
+def _publish_item(item, cursor):
 	body = _json_data([item.to_data()]) + '\n'
 	headers = {'Link': '</todos/?after=%s>; rel=changes-wait' % id}
 	publish('todos', HttpResponseFormat(headers=headers, body=body),
-		 id=id, prev_id=prev_id)
+		 id=cursor.cur, prev_id=cursor.prev)
 
 def todos(request):
 	if request.method == 'OPTIONS':
@@ -63,10 +64,12 @@ def todos(request):
 			if not isinstance(params['completed'], bool):
 				raise HttpResponseBadRequest()
 			i.completed = params['completed']
-		cursor, prev_cursor = i.save()
-		if cursor != prev_cursor:
-			_publish_item(i, cursor, prev_cursor)
-		return _item_response(i)
+		cursor = i.save()
+		if cursor.cur != cursor.prev:
+			_publish_item(i, cursor)
+		resp = _item_response(i, status=201)
+		resp['Location'] = reverse('todos-item', args=[i.id])
+		return resp
 	else:
 		return HttpResponseNotAllowed(['HEAD', 'GET', 'POST'])
 
@@ -92,14 +95,14 @@ def todos_item(request, todo_id):
 				raise HttpResponseBadRequest()
 			i.completed = params['completed']
 			fields.append('completed')
-		cursor, prev_cursor = i.save(fields=fields)
-		if cursor != prev_cursor:
-			_publish_item(i, cursor, prev_cursor)
+		cursor = i.save(fields=fields)
+		if cursor.cur != cursor.prev:
+			_publish_item(i, cursor)
 		return _item_response(i)
 	elif request.method == 'DELETE':
-		cursor, prev_cursor = i.delete()
-		if cursor != prev_cursor:
-			_publish_item(i, cursor, prev_cursor)
-		return HttpResponse('Deleted\n', content_type='text/plain')
+		cursor = i.delete()
+		if cursor.cur != cursor.prev:
+			_publish_item(i, cursor)
+		return HttpResponse(status=204)
 	else:
 		return HttpResponseNotAllowed(['GET', 'POST', 'DELETE'])

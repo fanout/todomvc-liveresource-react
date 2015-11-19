@@ -11,6 +11,11 @@ if redis_url:
 else:
 	r = redis.Redis()
 
+class Cursor:
+	def __init__(self, cur, prev=None):
+		self.cur = cur
+		self.prev = prev
+
 class TodoItem(object):
 	class DoesNotExist(Exception):
 		pass
@@ -21,7 +26,7 @@ class TodoItem(object):
 		self.text = text
 		self.completed = completed
 
-	# return (cursor, prev cursor) after write
+	# return cursor after write
 	def save(self, fields=None):
 		if not self.id:
 			self.id = str(uuid.uuid4())
@@ -44,9 +49,9 @@ class TodoItem(object):
 			prev_version = version - 1
 			r.hset('todos-events', version, i.dumps())
 			r.zadd('todos-events-order-created', version, version)
-		return (str(version), str(prev_version))
+		return Cursor(str(version), str(prev_version))
 
-	# return (cursor, prev cursor) after write
+	# return cursor after write
 	def delete(self):
 		r.hdel('todos-items', self.id)
 		version = int(r.incr('todos-events-version'))
@@ -54,7 +59,7 @@ class TodoItem(object):
 		self.deleted = True
 		r.hset('todos-events', version, self.dumps())
 		r.zadd('todos-events-order-created', version, version)
-		return (str(version), str(prev_version))
+		return Cursor(str(version), str(prev_version))
 
 	def to_data(self):
 		out = { 'id': self.id }
@@ -106,7 +111,7 @@ class TodoItem(object):
 		for event_id in event_ids:
 			i = TodoItem.loads(r.hget('todos-events', event_id))
 			items.append(i)
-		return (items, str(version))
+		return (items, Cursor(str(version)))
 
 	# return (items, last cursor)
 	@staticmethod
@@ -121,7 +126,7 @@ class TodoItem(object):
 		for event_id in event_ids:
 			i = TodoItem.loads(r.hget('todos-events', event_id))
 			items.append(i)
-		return (items, str(version))
+		return (items, Cursor(str(version)))
 
 	@staticmethod
 	def trim():
