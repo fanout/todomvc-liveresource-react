@@ -100,7 +100,7 @@ class TodoItem(object):
 	def get_last_cursor():
 		data_raw = r.get('todos-events-version')
 		if not data_raw:
-			return str(0)
+			return Cursor(0)
 		return Cursor(data_raw)
 
 	# return (items, last cursor)
