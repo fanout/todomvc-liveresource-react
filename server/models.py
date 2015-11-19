@@ -1,5 +1,7 @@
 import os
 import urlparse
+from datetime import datetime
+import dateutil.parser
 import json
 import redis
 
@@ -27,6 +29,7 @@ class TodoItem(object):
 		self.deleted = False
 		self.text = text
 		self.completed = completed
+		self.modified = datetime.utcnow()
 
 	# return cursor after write
 	def save(self, fields=None):
@@ -73,6 +76,7 @@ class TodoItem(object):
 			out['completed'] = self.completed
 		else:
 			out['deleted'] = True
+		out['modified-time'] = self.modified.isoformat()
 		return out
 
 	def dumps(self):
@@ -87,6 +91,7 @@ class TodoItem(object):
 		if not i.deleted:
 			i.text = data['text']
 			i.completed = data.get('completed', False)
+		i.modified = dateutil.parser.parse(data['modified-time'])
 		return i
 
 	@staticmethod
