@@ -33,10 +33,13 @@ class TodoItem(object):
 
 	# return cursor after write
 	def save(self, fields=None):
+		self.modified = datetime.utcnow()
+
 		if not self.id:
 			if int(r.hlen('todos-items')) >= 50:
 				raise TodoItem.LimitError('maximum item count reached')
 
+			self.modified = datetime.utcnow()
 			self.id = str(r.incr('todos-auto-id'))
 			r.hset('todos-items', self.id, self.dumps())
 			version = int(r.incr('todos-events-version'))
@@ -50,6 +53,7 @@ class TodoItem(object):
 					i.text = self.text
 				if 'completed' in fields:
 					i.completed = self.completed
+				i.modified = self.modified
 			else:
 				i = self
 			r.hset('todos-items', i.id, i.dumps())
@@ -61,6 +65,7 @@ class TodoItem(object):
 
 	# return cursor after write
 	def delete(self):
+		self.modified = datetime.utcnow()
 		r.hdel('todos-items', self.id)
 		version = int(r.incr('todos-events-version'))
 		prev_version = version - 1
@@ -76,7 +81,7 @@ class TodoItem(object):
 			out['completed'] = self.completed
 		else:
 			out['deleted'] = True
-		out['modified-time'] = self.modified.isoformat()
+		out['modified-at'] = self.modified.isoformat()
 		return out
 
 	def dumps(self):
@@ -91,7 +96,7 @@ class TodoItem(object):
 		if not i.deleted:
 			i.text = data['text']
 			i.completed = data.get('completed', False)
-		i.modified = dateutil.parser.parse(data['modified-time'])
+		i.modified = dateutil.parser.parse(data['modified-at'])
 		return i
 
 	@staticmethod
