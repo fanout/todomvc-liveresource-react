@@ -96,7 +96,7 @@ class TodoItem(object):
 		data_raw = r.get('todos-events-version')
 		if not data_raw:
 			return str(0)
-		return data_raw
+		return Cursor(data_raw)
 
 	# return (items, last cursor)
 	@staticmethod
