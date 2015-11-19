@@ -28,7 +28,7 @@ def _publish_item(item, cursor):
 	stream_data = item.to_data()
 	stream_data['change-id'] = str(cursor.cur)
 	stream_content = _json_data(stream_data, False) + '\n'
-	headers = {'Link': '</todos/?after=%s>; rel=changes-wait' % cursor.cur}
+	headers = {'Link': '</todos/?after-change=%s>; rel=changes-wait' % cursor.cur}
 	formats = []
 	formats.append(HttpResponseFormat(headers=headers, body=body))
 	formats.append(HttpStreamFormat(stream_content))
@@ -41,11 +41,11 @@ def todos(request):
 	if request.method == 'HEAD':
 		last_cursor = TodoItem.get_last_cursor()
 		resp = HttpResponse()
-		resp['Link'] = '</todos/?after=%s>; rel=changes-wait' % last_cursor.cur
+		resp['Link'] = '</todos/?after-change=%s>; rel=changes-wait' % last_cursor.cur
 		return resp
 	elif request.method == 'GET':
 		stream = request.GET.get('stream')
-		after = request.GET.get('after')
+		after = request.GET.get('after-change')
 		wait = request.META.get('HTTP_WAIT')
 		if stream:
 			stream = (stream == 'true')
@@ -64,7 +64,7 @@ def todos(request):
 			else:
 				items, last_cursor = TodoItem.get_all()
 			resp = _list_response(items)
-			resp['Link'] = '</todos/?after=%s>; rel=changes-wait' % last_cursor.cur
+			resp['Link'] = '</todos/?after-change=%s>; rel=changes-wait' % last_cursor.cur
 			if len(items) == 0 and wait:
 				set_hold_longpoll(request, Channel('todos', prev_id=last_cursor.cur), timeout=wait)
 			return resp
