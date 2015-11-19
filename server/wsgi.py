@@ -13,4 +13,15 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.settings")
 from django.core.wsgi import get_wsgi_application
 from dj_static import Cling
 
-application = Cling(get_wsgi_application())
+vars = (
+	'DJANGO_SECRET_KEY',
+	'DJANGO_DEBUG',
+	'GRIP_URL'
+)
+
+#application = Cling(get_wsgi_application())
+def application(environ, start_response):
+	for var in vars:
+		if var in environ:
+			os.environ[var] = environ[var]
+	return Cling(get_wsgi_application()(environ, start_response))
