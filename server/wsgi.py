@@ -24,4 +24,4 @@ def application(environ, start_response):
 	for var in vars:
 		if var in environ:
 			os.environ[var] = environ[var]
-	return Cling(get_wsgi_application()(environ, start_response))
+	return get_wsgi_application()(environ, start_response)
