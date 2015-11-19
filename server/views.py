@@ -2,7 +2,7 @@ import json
 from django.http import HttpResponse, HttpResponseBadRequest, \
 	HttpResponseNotAllowed, HttpResponseNotFound
 from django.core.urlresolvers import reverse
-from gripcontrol import HttpResponseFormat, Channel
+from gripcontrol import HttpResponseFormat, HttpStreamFormat, Channel
 from django_grip import set_hold_longpoll, set_hold_stream, publish
 from models import TodoItem
 
