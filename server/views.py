@@ -3,7 +3,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, \
 	HttpResponseNotAllowed, HttpResponseNotFound
 from django.core.urlresolvers import reverse
 from gripcontrol import HttpResponseFormat, Channel
-from django_grip import set_hold_longpoll, publish
+from django_grip import set_hold_longpoll, set_hold_stream, publish
 from models import TodoItem
 
 def _json_data(data, pretty=True):
@@ -25,9 +25,12 @@ def _item_response(item, status=200):
 
 def _publish_item(item, cursor):
 	body = _json_data([item.to_data()]) + '\n'
+	stream_content = _json_data(item.to_data(), False) + '\n'
 	headers = {'Link': '</todos/?after=%s>; rel=changes-wait' % id}
-	publish('todos', HttpResponseFormat(headers=headers, body=body),
-		 id=cursor.cur, prev_id=cursor.prev)
+	formats = []
+	formats.append(HttpResponseFormat(headers=headers, body=body))
+	formats.append(HttpStreamFormat(stream_content))
+	publish('todos', formats, id=cursor.cur, prev_id=cursor.prev)
 
 def todos(request):
 	if request.method == 'OPTIONS':
@@ -39,22 +42,30 @@ def todos(request):
 		resp['Link'] = '</todos/?after=%s>; rel=changes-wait' % last_cursor
 		return resp
 	elif request.method == 'GET':
+		stream = request.GET.get('stream')
 		after = request.GET.get('after')
 		wait = request.META.get('HTTP_WAIT')
+		if stream:
+			stream = (stream == 'true')
 		if wait:
 			wait = int(wait)
-		if after:
-			try:
-				items, last_cursor = TodoItem.get_after(after)
-			except TodoItem.DoesNotExist:
-				return HttpResponseNotFound()
+
+		if stream:
+			set_hold_stream(request, Channel('todos'))
+			return HttpResponse(content_type='text/plain')
 		else:
-			items, last_cursor = TodoItem.get_all()
-		resp = _list_response(items)
-		resp['Link'] = '</todos/?after=%s>; rel=changes-wait' % last_cursor
-		if len(items) == 0 and wait:
-			set_hold_longpoll(request, Channel('todos', prev_id=last_cursor), timeout=wait)
-		return resp
+			if after:
+				try:
+					items, last_cursor = TodoItem.get_after(after)
+				except TodoItem.DoesNotExist:
+					return HttpResponseNotFound()
+			else:
+				items, last_cursor = TodoItem.get_all()
+			resp = _list_response(items)
+			resp['Link'] = '</todos/?after=%s>; rel=changes-wait' % last_cursor
+			if len(items) == 0 and wait:
+				set_hold_longpoll(request, Channel('todos', prev_id=last_cursor), timeout=wait)
+			return resp
 	elif request.method == 'POST':
 		params = json.loads(request.body)
 		i = TodoItem()
