@@ -17,17 +17,44 @@
             .liveresource-info {
                 font-size: 0.9em;
             }
+
+            .hidden {
+                display: none;
+            }
         </style>
 	</head>
 	<body>
         <div class="liveresource-info">
             <p>API docs: <a href="http://docs.realtimetodolist.apiary.io/">http://docs.realtimetodolist.apiary.io/</a></p>
             <p>
-                Stream: <code>curl <span class="endpoint">http://todomvc-api.liveresource.org/todos/</span>?stream=true</code>
+                Stream: <code class="hidden example-code">curl <span class="endpoint">http://todomvc-api.liveresource.org/todos/</span>?stream=true</code>
             </p>
         </div>
 
         <div id="main"></div>
+
+        <script>
+            var API_ENDPOINT = "http://todomvc-api.liveresource.org/todos/";
+
+            var currentHostname = window.location.hostname;
+            var domainRegex = /todomvc\.(.*)\.org$/;
+            var result = domainRegex.exec(window.location.hostname);
+            if (result != null && result.length > 0) {
+                API_ENDPOINT = "http://todomvc-api." + result[1] + ".org/todos/";
+            }
+
+            var endpointDomNodes = document.getElementsByClassName("endpoint");
+            for (var i = 0; i < endpointDomNodes.length; i++) {
+                var node = endpointDomNodes[i];
+                node.textContent = API_ENDPOINT;
+            }
+
+            var endpointCodeDomNodes = document.getElementsByClassName("example-code");
+            for (var i = 0; i < endpointDomNodes.length; i++) {
+                var node = endpointCodeDomNodes[i];
+                node.className = "example-code";
+            }
+        </script>
 
 		<!-- Scripts here. Don't remove ↓ -->
 		<script src="node_modules/todomvc-common/base.js"></script>
@@ -46,22 +73,8 @@
 		<script src="js/app.js"></script>
 
         <script src="node_modules/babel-core/browser.min.js"></script>
+
         <script>
-            var API_ENDPOINT = "http://todomvc-api.liveresource.org/todos/";
-
-            var currentHostname = window.location.hostname;
-            var domainRegex = /todomvc\.(.*)\.org$/;
-            var result = domainRegex.exec(window.location.hostname);
-            if (result != null && result.length > 0) {
-                API_ENDPOINT = "http://todomvc-api." + result[1] + ".org/todos/";
-            }
-
-            var endpointDomNodes = document.getElementsByClassName("endpoint");
-            for (var i = 0; i < endpointDomNodes.length; i++) {
-                var node = endpointDomNodes[i];
-                node.textContent = API_ENDPOINT;
-            }
-
             var domNode = document.getElementById('main');
             var main = ReactDOM.render(React.createElement(Main, {eventNode: domNode, loadingItemsMessage: "Loading realtime items..."}), domNode);
             var todoApp = main.getTodoApp();
