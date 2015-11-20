@@ -35,13 +35,15 @@
             var currentHostname = window.location.hostname;
             var domainRegex = /todomvc\.(.*)\.org$/;
             var result = domainRegex.exec(window.location.hostname);
-            if (result.length > 0) {
+            if (result != null && result.length > 0) {
                 API_ENDPOINT = "http://todomvc-api." + result[1] + ".org/todos/";
             }
 
             var domNode = document.getElementById('main');
             var main = ReactDOM.render(React.createElement(Main, {eventNode: domNode}), domNode);
             var todoApp = main.getTodoApp();
+
+            LiveResource.options.maxLongPollDelayMsecs = 500;
 
             var liveResource = new LiveResource(API_ENDPOINT);
             liveResource.on("ready", function() {
