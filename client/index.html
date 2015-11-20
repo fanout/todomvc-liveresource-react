@@ -10,6 +10,12 @@
 		<link rel="stylesheet" href="css/app.css">
 	</head>
 	<body>
+        <div class="liveresource-info">
+            <p>API docs <a href="http://docs.realtimetodolist.apiary.io/">http://docs.realtimetodolist.apiary.io/</a></p>
+            <p>Example:</p>
+            <pre class="code">curl <span class="endpoint">http://todomvc-api.liveresource.org/todos/</span>?stream=true</pre>
+        </div>
+
         <div id="main"></div>
 
 		<!-- Scripts here. Don't remove ↓ -->
@@ -37,6 +43,12 @@
             var result = domainRegex.exec(window.location.hostname);
             if (result != null && result.length > 0) {
                 API_ENDPOINT = "http://todomvc-api." + result[1] + ".org/todos/";
+            }
+
+            var endpointDomNodes = document.getElementsByClassName("endpoint");
+            for (var i = 0; i < endpointDomNodes.length; i++) {
+                var node = endpointDomNodes[i];
+                node.textContent = API_ENDPOINT;
             }
 
             var domNode = document.getElementById('main');
