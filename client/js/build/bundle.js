@@ -92,7 +92,7 @@ var Main = (function (_React$Component) {
             return React.createElement(
                 "div",
                 null,
-                React.createElement(TodoApp, { eventNode: this.props.eventNode, ref: function ref(c) {
+                React.createElement(TodoApp, { eventNode: this.props.eventNode, loadingItemsMessage: this.props.loadingItemsMessage, ref: function ref(c) {
                         return _this2._todoApp = c;
                     } }),
                 React.createElement(Footer, null)
@@ -109,7 +109,8 @@ var Main = (function (_React$Component) {
 })(React.Component);
 
 Main.defaultProps = {
-    eventNode: null
+    eventNode: null,
+    loadingItemsMessage: null
 };
 'use strict';
 
@@ -124,14 +125,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var TodoApp = (function (_React$Component) {
     _inherits(TodoApp, _React$Component);
 
-    function TodoApp() {
+    function TodoApp(props) {
         _classCallCheck(this, TodoApp);
 
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(TodoApp).call(this));
+        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(TodoApp).call(this, props));
 
         _this.state = {
             mode: TodoApp.MODES.ALL,
-            todoItems: []
+            todoItems: [],
+            loadingItemsMessage: props.loadingItemsMessage
         };
         var router = Router({
             '/': function _() {
@@ -175,6 +177,11 @@ var TodoApp = (function (_React$Component) {
                 'section',
                 { className: 'todoapp' },
                 React.createElement(TodoAppHeader, { onCreateTodo: this.onCreateTodo.bind(this) }),
+                this.state.loadingItemsMessage != null ? React.createElement(
+                    'div',
+                    { className: 'loading-message' },
+                    this.state.loadingItemsMessage
+                ) : null,
                 filteredTodoItems.length > 0 ? React.createElement(TodoAppMain, { todoItems: filteredTodoItems,
                     activeTodosCount: activeTodosCount,
                     onUpdateTodoText: this.onUpdateTodoText.bind(this),
@@ -216,6 +223,11 @@ var TodoApp = (function (_React$Component) {
 
             this.setState({ todoItems: todoItems });
             this.forceUpdate();
+        }
+    }, {
+        key: 'setLoadingItemsMessage',
+        value: function setLoadingItemsMessage(loadingItemsMessage) {
+            this.setState({ loadingItemsMessage: loadingItemsMessage });
         }
     }, {
         key: 'createTodo',
@@ -344,7 +356,8 @@ var TodoApp = (function (_React$Component) {
 })(React.Component);
 
 TodoApp.defaultProps = {
-    eventNode: null
+    eventNode: null,
+    loadingItemsMessage: null
 };
 TodoApp.MODES = {
     ALL: 'all',

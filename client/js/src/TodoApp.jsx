@@ -1,9 +1,10 @@
 class TodoApp extends React.Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
             mode: TodoApp.MODES.ALL,
-            todoItems: []
+            todoItems: [],
+            loadingItemsMessage: props.loadingItemsMessage
         };
         var router = Router({
             '/': () => this.setState({mode: TodoApp.MODES.ALL}),
@@ -38,6 +39,9 @@ class TodoApp extends React.Component {
         return (
             <section className="todoapp">
                 <TodoAppHeader onCreateTodo={this.onCreateTodo.bind(this)} />
+                {this.state.loadingItemsMessage != null ? (
+                    <div className="loading-message">{this.state.loadingItemsMessage}</div>
+                ) : null}
                 {filteredTodoItems.length > 0 ? (
                     <TodoAppMain todoItems={filteredTodoItems}
                                  activeTodosCount={activeTodosCount}
@@ -83,6 +87,10 @@ class TodoApp extends React.Component {
 
         this.setState({todoItems: todoItems});
         this.forceUpdate();
+    }
+
+    setLoadingItemsMessage(loadingItemsMessage) {
+        this.setState({loadingItemsMessage});
     }
 
     createTodo(text) {
@@ -188,7 +196,8 @@ class TodoApp extends React.Component {
     }
 }
 TodoApp.defaultProps = {
-    eventNode: null
+    eventNode: null,
+    loadingItemsMessage: null
 };
 TodoApp.MODES = {
     ALL: 'all',

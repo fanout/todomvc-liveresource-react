@@ -6,7 +6,7 @@ class Main extends React.Component {
     render() {
         return (
             <div>
-                <TodoApp eventNode={this.props.eventNode} ref={c => this._todoApp = c} />
+                <TodoApp eventNode={this.props.eventNode} loadingItemsMessage={this.props.loadingItemsMessage} ref={c => this._todoApp = c} />
                 <Footer />
             </div>
         )
@@ -16,5 +16,6 @@ class Main extends React.Component {
     }
 }
 Main.defaultProps = {
-    eventNode: null
+    eventNode: null,
+    loadingItemsMessage: null,
 };

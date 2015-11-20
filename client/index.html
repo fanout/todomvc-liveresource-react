@@ -8,6 +8,12 @@
 		<link rel="stylesheet" href="node_modules/todomvc-app-css/index.css">
 		<!-- CSS overrides - remove if you don't need it -->
 		<link rel="stylesheet" href="css/app.css">
+        <style>
+            .loading-message {
+                padding: 1em;
+                text-align: center;
+            }
+        </style>
 	</head>
 	<body>
         <div class="liveresource-info">
@@ -52,7 +58,7 @@
             }
 
             var domNode = document.getElementById('main');
-            var main = ReactDOM.render(React.createElement(Main, {eventNode: domNode}), domNode);
+            var main = ReactDOM.render(React.createElement(Main, {eventNode: domNode, loadingItemsMessage: "Loading realtime items..."}), domNode);
             var todoApp = main.getTodoApp();
 
             LiveResource.options.maxLongPollDelayMsecs = 500;
@@ -66,6 +72,7 @@
                     success: function(data) {
                         var responses = JSON.parse(data);
                         todoApp.syncItems(responses);
+                        todoApp.setLoadingItemsMessage(null);
                     }
                 });
             });
