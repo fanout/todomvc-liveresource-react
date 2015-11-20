@@ -1,7 +1,8 @@
 import os
 import urlparse
+from datetime import datetime
+import dateutil.parser
 import json
-import uuid
 import redis
 
 redis_url = os.environ.get('REDISCLOUD_URL')
@@ -11,8 +12,16 @@ if redis_url:
 else:
 	r = redis.Redis()
 
+class Cursor:
+	def __init__(self, cur, prev=None):
+		self.cur = cur
+		self.prev = prev
+
 class TodoItem(object):
 	class DoesNotExist(Exception):
+		pass
+
+	class LimitError(Exception):
 		pass
 
 	def __init__(self, id=None, text='', completed=False):
@@ -20,11 +29,18 @@ class TodoItem(object):
 		self.deleted = False
 		self.text = text
 		self.completed = completed
+		self.modified = datetime.utcnow()
 
-	# return (cursor, prev cursor) after write
+	# return cursor after write
 	def save(self, fields=None):
+		self.modified = datetime.utcnow()
+
 		if not self.id:
-			self.id = str(uuid.uuid4())
+			if int(r.hlen('todos-items')) >= 50:
+				raise TodoItem.LimitError('maximum item count reached')
+
+			self.modified = datetime.utcnow()
+			self.id = str(r.incr('todos-auto-id'))
 			r.hset('todos-items', self.id, self.dumps())
 			version = int(r.incr('todos-events-version'))
 			prev_version = version - 1
@@ -37,6 +53,7 @@ class TodoItem(object):
 					i.text = self.text
 				if 'completed' in fields:
 					i.completed = self.completed
+				i.modified = self.modified
 			else:
 				i = self
 			r.hset('todos-items', i.id, i.dumps())
@@ -44,17 +61,18 @@ class TodoItem(object):
 			prev_version = version - 1
 			r.hset('todos-events', version, i.dumps())
 			r.zadd('todos-events-order-created', version, version)
-		return (str(version), str(prev_version))
+		return Cursor(str(version), str(prev_version))
 
-	# return (cursor, prev cursor) after write
+	# return cursor after write
 	def delete(self):
+		self.modified = datetime.utcnow()
 		r.hdel('todos-items', self.id)
 		version = int(r.incr('todos-events-version'))
 		prev_version = version - 1
 		self.deleted = True
 		r.hset('todos-events', version, self.dumps())
 		r.zadd('todos-events-order-created', version, version)
-		return (str(version), str(prev_version))
+		return Cursor(str(version), str(prev_version))
 
 	def to_data(self):
 		out = { 'id': self.id }
@@ -63,6 +81,7 @@ class TodoItem(object):
 			out['completed'] = self.completed
 		else:
 			out['deleted'] = True
+		out['modified-at'] = self.modified.isoformat()
 		return out
 
 	def dumps(self):
@@ -77,6 +96,7 @@ class TodoItem(object):
 		if not i.deleted:
 			i.text = data['text']
 			i.completed = data.get('completed', False)
+		i.modified = dateutil.parser.parse(data['modified-at'])
 		return i
 
 	@staticmethod
@@ -90,8 +110,8 @@ class TodoItem(object):
 	def get_last_cursor():
 		data_raw = r.get('todos-events-version')
 		if not data_raw:
-			return str(0)
-		return data_raw
+			return Cursor(0)
+		return Cursor(data_raw)
 
 	# return (items, last cursor)
 	@staticmethod
@@ -103,10 +123,16 @@ class TodoItem(object):
 			version = 0
 		event_ids = r.zrangebyscore('todos-events-order-created', '-inf', '+inf')
 		items = []
-		for event_id in event_ids:
+		item_ids = set()
+		for event_id in reversed(event_ids):
 			i = TodoItem.loads(r.hget('todos-events', event_id))
+			if i.id in item_ids:
+				# only keep the most recent event per item
+				continue
 			items.append(i)
-		return (items, str(version))
+			item_ids.add(i.id)
+		items.reverse()
+		return (items, Cursor(str(version)))
 
 	# return (items, last cursor)
 	@staticmethod
@@ -121,7 +147,7 @@ class TodoItem(object):
 		for event_id in event_ids:
 			i = TodoItem.loads(r.hget('todos-events', event_id))
 			items.append(i)
-		return (items, str(version))
+		return (items, Cursor(str(version)))
 
 	@staticmethod
 	def trim():
