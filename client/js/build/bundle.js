@@ -59,6 +59,16 @@ var Footer = function Footer() {
                 { href: "http://todomvc.com" },
                 "TodoMVC"
             )
+        ),
+        React.createElement(
+            "p",
+            null,
+            "Source on ",
+            React.createElement(
+                "a",
+                { href: "https://github.com/fanout/todomvc-liveresource-react" },
+                "Github"
+            )
         )
     );
 };
