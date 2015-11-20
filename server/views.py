@@ -39,7 +39,9 @@ def _publish_item(item, cursor):
 
 def todos(request):
 	if request.method == 'OPTIONS':
-		return HttpResponse()
+		resp = HttpResponse()
+		resp['Access-Control-Max-Age'] = '3600'
+		return resp
 
 	if request.method == 'HEAD':
 		last_cursor = TodoItem.get_last_cursor()
