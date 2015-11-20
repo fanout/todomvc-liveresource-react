@@ -469,7 +469,7 @@ var TodoAppHeader = (function (_React$Component) {
                     onChange: this.handleChange.bind(this),
                     onKeyDown: this.handleKeyDown.bind(this),
                     placeholder: "What needs to be done?",
-                    autofocus: true })
+                    autoFocus: true })
             );
         }
     }, {
