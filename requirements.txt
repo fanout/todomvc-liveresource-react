@@ -7,6 +7,7 @@ django-dotenv==1.4.1
 django-grip==1.6.1
 gripcontrol==2.4.2
 gunicorn==19.3.0
+psycopg2==2.6.1
 pubcontrol==2.2.7
 python-dateutil==2.4.2
 redis==2.10.5
