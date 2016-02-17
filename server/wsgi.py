@@ -8,20 +8,12 @@ https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
 """
 
 import os
+
+import dotenv
+from django.core.wsgi import get_wsgi_application
+
+dotenv.read_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.settings")
 
-from django.core.wsgi import get_wsgi_application
-#from dj_static import Cling
-
-vars = (
-	'DJANGO_SECRET_KEY',
-	'DJANGO_DEBUG',
-	'GRIP_URL'
-)
-
-#application = Cling(get_wsgi_application())
-def application(environ, start_response):
-	for var in vars:
-		if var in environ:
-			os.environ[var] = environ[var]
-	return get_wsgi_application()(environ, start_response)
+application = Cling(get_wsgi_application())
