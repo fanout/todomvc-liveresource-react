@@ -94,7 +94,7 @@ export function init(domNode) {
             // console.log("child-added");
             // console.log(item);
 
-            const item = Object.assign({}, dataItem, { id: parseInt(dataItem.id, 10) });
+            const item = Object.assign({}, dataItem, { id: dataItem.id });
 
             const state = store.getState();
             const todo = fromRootReducer.getTodoState(state);
@@ -169,7 +169,7 @@ export function init(domNode) {
 
             store.dispatch({type: "SET_TODO_ITEMS", todoItems: [
                 ...stateTodoItems.filter(todoItem => todoItem !== item),
-                Object.assign(item, { id: parseInt(responses.id, 10) })
+                Object.assign(item, { id: responses.id })
             ]});
         }
     });

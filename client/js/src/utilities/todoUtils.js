@@ -1,5 +1,5 @@
 export function syncItems(data) {
-    // TODO: ?
+    // TODO: Examine efficiency and correctness of this algorithm
 
     const mappedIds = [];
     const mappedItems = {};
@@ -26,15 +26,22 @@ export function syncItems(data) {
     return todoItems;
 }
 
-let nextId = 0;
 export function createTodo(text) {
     // This is a "tentative one" to display
     // until we get official update notice
-    nextId = nextId - 1;
     return {
-        id: nextId,
+        id: createGuid(),
         text: text,
         completed: false,
         pendingSync: true
     };
 }
+
+function S4() {
+    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+}
+
+function createGuid() {
+    return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+}
+
