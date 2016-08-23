@@ -265,3 +265,14 @@ class TodoItem(object):
 	def trim():
 		# TODO
 		pass
+
+	@staticmethod
+	def get_totals():
+		total_completed = 0
+		items_raw = r.hgetall('todos-items')
+		for id, item_raw in items_raw.iteritems():
+			i = TodoItem.loads(item_raw)
+			if i.completed:
+				total_completed += 1
+		total_items = len(items_raw)
+		return (total_items, total_completed)

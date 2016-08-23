@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from django.http import HttpResponse, HttpResponseBadRequest, \
 	HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseNotFound
 from django.core.urlresolvers import reverse
@@ -27,8 +28,14 @@ def _changes_link(change_id):
 	return '</todos/?after_change=%s>; rel=changes-wait' % change_id
 
 def _publish_item(item, cursor):
-	body = _json_data([item.to_data()]) + '\n'
-	stream_data = item.to_data()
+	total, completed = TodoItem.get_totals()
+
+	data = item.to_data()
+	data['total-items'] = total
+	data['total-completed'] = completed
+
+	body = _json_data([data]) + '\n'
+	stream_data = deepcopy(data)
 	stream_data['change-id'] = str(cursor.cur)
 	stream_content = _json_data(stream_data, False) + '\n'
 	headers = {'Link': _changes_link(cursor.cur)}
