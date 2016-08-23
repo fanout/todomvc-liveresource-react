@@ -177,7 +177,7 @@ class TodoItem(object):
 	def loads(s):
 		data = json.loads(s)
 		i = TodoItem()
-		i.id = data['id']
+		i.id = str(data['id'])
 		i.deleted = data.get('deleted', False)
 		if not i.deleted:
 			i.text = data['text']
