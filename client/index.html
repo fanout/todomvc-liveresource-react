@@ -1,156 +1,21 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>LiveResource & React • TodoMVC</title>
-		<link rel="stylesheet" href="node_modules/todomvc-common/base.css">
-		<link rel="stylesheet" href="node_modules/todomvc-app-css/index.css">
-		<!-- CSS overrides - remove if you don't need it -->
-		<link rel="stylesheet" href="css/app.css">
-        <style>
-            .loading-message {
-                padding: 1em;
-                text-align: center;
-            }
-
-            .liveresource-info {
-                font-size: 0.9em;
-            }
-
-            .hidden {
-                display: none;
-            }
-        </style>
-	</head>
-	<body>
-        <div class="liveresource-info">
-            <p>API docs: <a href="http://docs.realtimetodolist.apiary.io/">http://docs.realtimetodolist.apiary.io/</a></p>
-            <p>
-                Stream: <code class="hidden example-code">curl -i <span class="endpoint">http://todomvc-api.liveresource.org/todos/</span>?stream=true</code>
-            </p>
-        </div>
-
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>LiveResource & React • TodoMVC</title>
+        <link rel="stylesheet" href="node_modules/todomvc-common/base.css">
+        <link rel="stylesheet" href="node_modules/todomvc-app-css/index.css">
+        <link rel="stylesheet" href="css/app.css">
+    </head>
+    <body>
         <div id="main"></div>
 
-        <script>
-            var API_ENDPOINT = "http://todomvc-api.liveresource.org/todos/";
-
-            var currentHostname = window.location.hostname;
-            var domainRegex = /todomvc\.(.*)\.org$/;
-            var result = domainRegex.exec(window.location.hostname);
-            if (result != null && result.length > 0) {
-                API_ENDPOINT = "http://todomvc-api." + result[1] + ".org/todos/";
-            }
-
-            var endpointDomNodes = document.getElementsByClassName("endpoint");
-            for (var i = 0; i < endpointDomNodes.length; i++) {
-                var node = endpointDomNodes[i];
-                node.textContent = API_ENDPOINT;
-            }
-
-            var endpointCodeDomNodes = document.getElementsByClassName("example-code");
-            for (var i = 0; i < endpointDomNodes.length; i++) {
-                var node = endpointCodeDomNodes[i];
-                node.className = "example-code";
-            }
-        </script>
-
-		<!-- Scripts here. Don't remove ↓ -->
-		<script src="node_modules/todomvc-common/base.js"></script>
-        <script src="js/vendor/react-0.14.2.min.js"></script>
-        <script src="js/vendor/react-dom-0.14.2.min.js"></script>
-        <!--
-        <script src="js/vendor/react.js"></script>
-        <script src="js/vendor/react-dom.js"></script>
-        -->
+        <script src="node_modules/todomvc-common/base.js"></script>
         <script src="js/vendor/pollymer-1.1.1.js"></script>
         <script src="js/vendor/websockhop-1.0.1.js"></script>
         <script src="js/vendor/liveresource-0.1.1.min.js"></script>
-        <script src="node_modules/director/build/director.min.js"></script>
-        <script src="js/build/bundle.js"></script>
-
-		<script src="js/app.js"></script>
-
-        <script>
-            var domNode = document.getElementById('main');
-            var main = ReactDOM.render(React.createElement(Main, {eventNode: domNode, loadingItemsMessage: "Loading realtime items..."}), domNode);
-            var todoApp = main.getTodoApp();
-
-            LiveResource.options.maxLongPollDelayMsecs = 500;
-
-            var liveResource = new LiveResource(API_ENDPOINT);
-            liveResource.on("ready", function() {
-                // console.log("ready");
-                Utilities.ajax({
-                    method: 'GET',
-                    endpoint: API_ENDPOINT,
-                    success: function(data) {
-                        var responses = JSON.parse(data);
-                        todoApp.syncItems(responses);
-                        todoApp.setLoadingItemsMessage(null);
-                    }
-                });
-            });
-            liveResource.on("child-added", function(item) {
-                // console.log("child-added");
-                // console.log(item);
-                todoApp.addTodo(item);
-            });
-            liveResource.on("child-deleted", function(item) {
-                // console.log("child-deleted");
-                // console.log(item);
-                todoApp.destroyTodo(item.id);
-            });
-
-            /* These will hook up to ajax endpoints */
-            domNode.addEventListener("createTodo", function(e) {
-                var item = e.detail.item;
-                // console.log("createTodo")
-                // console.log(item);
-                Utilities.ajax({
-                    method: 'POST',
-                    endpoint: API_ENDPOINT,
-                    data: JSON.stringify(item),
-                    success: function(data) {
-                        var responses = JSON.parse(data);
-                        item.id = responses.id;
-                        todoApp.forceUpdate();
-                    }
-                });
-            });
-            domNode.addEventListener("updateTodoText", function(e) {
-                var item = e.detail.item;
-                // console.log("updateTodoText");
-                // console.log(item);
-                Utilities.ajax({
-                    method: 'PUT',
-                    endpoint: API_ENDPOINT + item.id + "/",
-                    data: JSON.stringify(item)
-                });
-            });
-            domNode.addEventListener("updateTodoComplete", function(e) {
-                var item = e.detail.item;
-                // console.log("updateTodoComplete");
-                // console.log(item);
-                Utilities.ajax({
-                    method: 'PUT',
-                    endpoint: API_ENDPOINT + item.id + "/",
-                    data: JSON.stringify(item)
-                });
-            });
-            domNode.addEventListener("destroyTodo", function(e) {
-                var item = e.detail.item;
-                // console.log("destroyTodo");
-                // console.log(item);
-                Utilities.ajax({
-                    method: 'DELETE',
-                    endpoint: API_ENDPOINT + item.id + "/",
-                    data: JSON.stringify(item)
-                });
-            });
-
-        </script>
-
+        <script src="js/build/main.bundle.js"></script>
+        <script src="js/app.js"></script>
     </body>
 </html>

@@ -1,6 +1,8 @@
 (function (window) {
 	'use strict';
 
-	// Your starting point. Enjoy the ride!
+    var domNode = document.getElementById('main');
+    //noinspection JSUnresolvedVariable
+    window.TodoMvcLiveResourceReact.init(domNode);
 
 })(window);

@@ -1,9 +1,14 @@
-class TodoAppHeader extends React.Component {
+import React from "react";
+import * as Constants from "../Constants";
+
+class TodoAppHeader extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
             currentValue: ''
-        }
+        };
+        this._handleChange = ::this.handleChange;
+        this._handleKeyDown = ::this.handleKeyDown;
     }
     render() {
         return (
@@ -11,8 +16,8 @@ class TodoAppHeader extends React.Component {
                 <h1>todos</h1>
                 <input className="new-todo"
                        value={this.state.currentValue}
-                       onChange={this.handleChange.bind(this)}
-                       onKeyDown={this.handleKeyDown.bind(this)}
+                       onChange={this._handleChange}
+                       onKeyDown={this._handleKeyDown}
                        placeholder="What needs to be done?"
                        autoFocus={true} />
             </header>
@@ -22,20 +27,24 @@ class TodoAppHeader extends React.Component {
         this.setState({currentValue: event.target.value});
     }
     handleKeyDown(event) {
-        if (event.keyCode !== Constants.ENTER_KEY) {
+        if (event.keyCode !== Constants.KeyCodes.ENTER_KEY) {
             return;
         }
-
         event.preventDefault();
 
-        var val = this.state.currentValue.trim();
-
+        const { currentValue } = this.state;
+        const val = currentValue.trim();
         if (val) {
-            this.props.onCreateTodo(val);
-            this.setState({currentValue: ''});
+            const { onCreateTodo } = this.props;
+            if (onCreateTodo != null) {
+                onCreateTodo(val);
+                this.setState({currentValue: ''});
+            }
         }
     }
 }
 TodoAppHeader.defaultProps = {
     onCreateTodo: null
 };
+
+export default TodoAppHeader;

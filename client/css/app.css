@@ -1,8 +1,15 @@
-/*
+.pa1 {
+    padding: 1rem;
+}
 
-app-template.css overrides
+.tc {
+    text-align: center;
+}
 
-remove this comment if used
-remove this file if not
+.f4 {
+    font-size: 0.9rem;
+}
 
-*/
+.dn {
+    display: none;
+}
