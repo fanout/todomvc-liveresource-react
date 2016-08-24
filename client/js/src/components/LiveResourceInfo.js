@@ -7,7 +7,7 @@ class LiveResourceInfo extends React.PureComponent {
         const codeClassName = "ba b--gray br0_25 bg-ghostwhite ph0_5 pv0_25";
 
         return (
-            <div className="f4 mh--5">
+            <div className="f4 mh--5 tc">
                 <p>API docs: <a href="http://docs.realtimetodolist.apiary.io/">http://docs.realtimetodolist.apiary.io/</a></p>
                 {endpointUrl != null ? (
                     <p>
