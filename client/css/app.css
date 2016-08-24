@@ -1,3 +1,13 @@
+.pv0_25 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.ph0_5 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
 .pa1 {
     padding: 1rem;
 }
@@ -12,4 +22,25 @@
 
 .dn {
     display: none;
+}
+
+.mh--5 {
+    margin-left: -5rem;
+    margin-right: -5rem;
+}
+
+.bg-ghostwhite {
+    background-color: ghostwhite;
+}
+
+.ba {
+    border: black solid 1px;
+}
+
+.b--gray {
+    border-color: gray;
+}
+
+.br0_25 {
+    border-radius: 0.25rem;
 }
