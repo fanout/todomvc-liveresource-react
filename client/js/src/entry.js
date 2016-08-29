@@ -75,7 +75,7 @@ export function init(domNode) {
 
     if (useLiveResource) {
 
-        store.dispatch({type: "SET_LOADING_ITEMS_MESSAGE", loadingItemsMessage: "Loading realtime items..."});
+        store.dispatch({type: "SET_LOADING_ITEMS_MESSAGE", loadingItemsMessage: "Loading todo list items..."});
 
         LiveResource.options.maxLongPollDelayMsecs = 500;
 
