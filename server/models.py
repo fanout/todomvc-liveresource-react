@@ -12,6 +12,17 @@ if redis_url:
 else:
 	r = redis.Redis()
 
+def encode_list_id(s):
+	if len(s) > 64:
+		raise ValueError('list id too long')
+	out = ''
+	for c in s:
+		if c in ('% -'):
+			out += '%%%02X' % ord(c)
+		else:
+			out += c
+	return out
+
 class Cursor:
 	def __init__(self, cur, prev=None):
 		self.cur = cur
@@ -24,8 +35,9 @@ class TodoItem(object):
 	class LimitError(Exception):
 		pass
 
-	def __init__(self, id=None, text='', completed=False):
+	def __init__(self, id=None, list_id=None, text='', completed=False):
 		self.id = id
+		self.list_id = list_id
 		self.deleted = False
 		self.text = text
 		self.completed = completed
@@ -33,27 +45,34 @@ class TodoItem(object):
 
 	# return cursor after write
 	def save(self, fields=None):
+		list_base = 'todos-%s' % encode_list_id(self.list_id)
+		auto_id_key = '%s-auto-id' % list_base
+		items_key = '%s-items' % list_base
+		items_order_created_key = '%s-items-order-created' % list_base
+		events_version_key = '%s-events-version' % list_base
+		events_key = '%s-events' % list_base
+		events_order_created_key = '%s-events-order-created' % list_base
 		if not self.id:
 			while True:
 				with r.pipeline() as pipe:
 					try:
-						pipe.watch('todos-auto-id')
-						pipe.watch('todos-items')
-						pipe.watch('todos-items-order-created')
-						pipe.watch('todos-events-version')
-						pipe.watch('todos-events')
-						pipe.watch('todos-events-order-created')
+						pipe.watch(auto_id_key)
+						pipe.watch(items_key)
+						pipe.watch(items_order_created_key)
+						pipe.watch(events_version_key)
+						pipe.watch(events_key)
+						pipe.watch(events_order_created_key)
 
-						if int(pipe.hlen('todos-items')) >= 50:
+						if int(pipe.hlen(items_key)) >= 50:
 							raise TodoItem.LimitError('maximum item count reached')
 
-						item_id = pipe.get('todos-auto-id')
+						item_id = pipe.get(auto_id_key)
 						if item_id:
 							item_id = int(item_id) + 1
 						else:
 							item_id = 1
 
-						version = pipe.get('todos-events-version')
+						version = pipe.get(events_version_key)
 						if version:
 							version = int(version) + 1
 						else:
@@ -63,12 +82,12 @@ class TodoItem(object):
 						modified = datetime.utcnow()
 
 						pipe.multi()
-						pipe.set('todos-auto-id', item_id)
-						pipe.hset('todos-items', item_id, self.dumps(id=item_id, modified=modified))
-						pipe.zadd('todos-items-order-created', item_id, item_id)
-						pipe.set('todos-events-version', version)
-						pipe.hset('todos-events', version, self.dumps(id=item_id, modified=modified))
-						pipe.zadd('todos-events-order-created', version, version)
+						pipe.set(auto_id_key, item_id)
+						pipe.hset(items_key, item_id, self.dumps(id=item_id, modified=modified))
+						pipe.zadd(items_order_created_key, item_id, item_id)
+						pipe.set(events_version_key, version)
+						pipe.hset(events_key, version, self.dumps(id=item_id, modified=modified))
+						pipe.zadd(events_order_created_key, version, version)
 						pipe.execute()
 						self.id = str(item_id)
 						self.modified = modified
@@ -79,12 +98,12 @@ class TodoItem(object):
 			while True:
 				with r.pipeline() as pipe:
 					try:
-						pipe.watch('todos-items')
-						pipe.watch('todos-events-version')
-						pipe.watch('todos-events')
-						pipe.watch('todos-events-order-created')
+						pipe.watch(items_key)
+						pipe.watch(events_version_key)
+						pipe.watch(events_key)
+						pipe.watch(events_order_created_key)
 
-						version = pipe.get('todos-events-version')
+						version = pipe.get(events_version_key)
 						if version:
 							version = int(version) + 1
 						else:
@@ -94,7 +113,7 @@ class TodoItem(object):
 						modified = datetime.utcnow()
 
 						if fields:
-							i = TodoItem.loads(pipe.hget('todos-items', self.id))
+							i = TodoItem.loads(self.list_id, pipe.hget(items_key, self.id))
 							if 'text' in fields:
 								i.text = self.text
 							if 'completed' in fields:
@@ -104,10 +123,10 @@ class TodoItem(object):
 							i = self
 
 						pipe.multi()
-						pipe.hset('todos-items', i.id, i.dumps(modified=modified))
-						pipe.set('todos-events-version', version)
-						pipe.hset('todos-events', version, i.dumps(modified=modified))
-						pipe.zadd('todos-events-order-created', version, version)
+						pipe.hset(items_key, i.id, i.dumps(modified=modified))
+						pipe.set(events_version_key, version)
+						pipe.hset(events_key, version, i.dumps(modified=modified))
+						pipe.zadd(events_order_created_key, version, version)
 						pipe.execute()
 						self.modified = modified
 						break
@@ -117,16 +136,22 @@ class TodoItem(object):
 
 	# return cursor after write
 	def delete(self):
+		list_base = 'todos-%s' % encode_list_id(self.list_id)
+		items_key = '%s-items' % list_base
+		items_order_created_key = '%s-items-order-created' % list_base
+		events_version_key = '%s-events-version' % list_base
+		events_key = '%s-events' % list_base
+		events_order_created_key = '%s-events-order-created' % list_base
 		while True:
 			with r.pipeline() as pipe:
 				try:
-					pipe.watch('todos-items')
-					pipe.watch('todos-items-order-created')
-					pipe.watch('todos-events-version')
-					pipe.watch('todos-events')
-					pipe.watch('todos-events-order-created')
+					pipe.watch(items_key)
+					pipe.watch(items_order_created_key)
+					pipe.watch(events_version_key)
+					pipe.watch(events_key)
+					pipe.watch(events_order_created_key)
 
-					version = pipe.get('todos-events-version')
+					version = pipe.get(events_version_key)
 					if version:
 						version = int(version) + 1
 					else:
@@ -136,11 +161,11 @@ class TodoItem(object):
 					modified = datetime.utcnow()
 
 					pipe.multi()
-					pipe.hdel('todos-items', self.id)
-					pipe.zrem('todos-items-order-created', self.id)
-					pipe.set('todos-events-version', version)
-					pipe.hset('todos-events', version, self.dumps(deleted=True, modified=modified))
-					pipe.zadd('todos-events-order-created', version, version)
+					pipe.hdel(items_key, self.id)
+					pipe.zrem(items_order_created_key, self.id)
+					pipe.set(events_version_key, version)
+					pipe.hset(events_key, version, self.dumps(deleted=True, modified=modified))
+					pipe.zadd(events_order_created_key, version, version)
 					pipe.execute()
 					self.deleted = True
 					self.modified = modified
@@ -174,10 +199,11 @@ class TodoItem(object):
 		return json.dumps(data)
 
 	@staticmethod
-	def loads(s):
+	def loads(list_id, s):
 		data = json.loads(s)
 		i = TodoItem()
 		i.id = str(data['id'])
+		i.list_id = list_id
 		i.deleted = data.get('deleted', False)
 		if not i.deleted:
 			i.text = data['text']
@@ -186,45 +212,53 @@ class TodoItem(object):
 		return i
 
 	@staticmethod
-	def get(id):
-		data_raw = r.hget('todos-items', id)
+	def get(list_id, id):
+		list_base = 'todos-%s' % encode_list_id(list_id)
+		items_key = '%s-items' % list_base
+		data_raw = r.hget(items_key, id)
 		if not data_raw:
 			raise TodoItem.DoesNotExist()
-		return TodoItem.loads(data_raw)
+		return TodoItem.loads(list_id, data_raw)
 
 	@staticmethod
-	def get_last_cursor():
-		data_raw = r.get('todos-events-version')
+	def get_last_cursor(list_id):
+		list_base = 'todos-%s' % encode_list_id(list_id)
+		events_version_key = '%s-events-version' % list_base
+		data_raw = r.get(events_version_key)
 		if not data_raw:
 			return Cursor(0)
 		return Cursor(data_raw)
 
 	# return (items, last cursor)
 	@staticmethod
-	def get_all():
+	def get_all(list_id):
+		list_base = 'todos-%s' % encode_list_id(list_id)
+		items_key = '%s-items' % list_base
+		items_order_created_key = '%s-items-order-created' % list_base
+		events_version_key = '%s-events-version' % list_base
 		while True:
 			with r.pipeline() as pipe:
 				try:
-					pipe.watch('todos-items')
-					pipe.watch('todos-items-order-created')
-					pipe.watch('todos-events-version')
+					pipe.watch(items_key)
+					pipe.watch(items_order_created_key)
+					pipe.watch(events_version_key)
 
-					version = pipe.get('todos-events-version')
+					version = pipe.get(events_version_key)
 					if version:
 						version = int(version)
 					else:
 						version = 0
 
-					item_ids = pipe.zrangebyscore('todos-items-order-created', '-inf', '+inf')
+					item_ids = pipe.zrangebyscore(items_order_created_key, '-inf', '+inf')
 
 					pipe.multi()
 					for item_id in item_ids:
-						pipe.hget('todos-items', item_id)
+						pipe.hget(items_key, item_id)
 					ret = pipe.execute()
 
 					items = []
 					for item_raw in ret:
-						i = TodoItem.loads(item_raw)
+						i = TodoItem.loads(list_id, item_raw)
 						items.append(i)
 					return (items, Cursor(str(version)))
 				except redis.WatchError:
@@ -232,46 +266,52 @@ class TodoItem(object):
 
 	# return (items, last cursor)
 	@staticmethod
-	def get_after(cursor):
+	def get_after(list_id, cursor):
+		list_base = 'todos-%s' % encode_list_id(list_id)
+		events_version_key = '%s-events-version' % list_base
+		events_key = '%s-events' % list_base
+		events_order_created_key = '%s-events-order-created' % list_base
 		while True:
 			with r.pipeline() as pipe:
 				try:
-					pipe.watch('todos-events-version')
-					pipe.watch('todos-events')
-					pipe.watch('todos-events-order-created')
+					pipe.watch(events_version_key)
+					pipe.watch(events_key)
+					pipe.watch(events_order_created_key)
 
-					version = pipe.get('todos-events-version')
+					version = pipe.get(events_version_key)
 					if version:
 						version = int(version)
 					else:
 						version = 0
 
-					event_ids = pipe.zrangebyscore('todos-events-order-created', int(cursor) + 1, '+inf')
+					event_ids = pipe.zrangebyscore(events_order_created_key, int(cursor) + 1, '+inf')
 
 					pipe.multi()
 					for event_id in event_ids:
-						pipe.hget('todos-events', event_id)
+						pipe.hget(events_key, event_id)
 					ret = pipe.execute()
 
 					items = []
 					for item_raw in ret:
-						i = TodoItem.loads(item_raw)
+						i = TodoItem.loads(list_id, item_raw)
 						items.append(i)
 					return (items, Cursor(str(version)))
 				except redis.WatchError:
 					continue
 
 	@staticmethod
-	def trim():
+	def trim(list_id):
 		# TODO
 		pass
 
 	@staticmethod
-	def get_totals():
+	def get_totals(list_id):
+		list_base = 'todos-%s' % encode_list_id(list_id)
+		items_key = '%s-items' % list_base
 		total_completed = 0
-		items_raw = r.hgetall('todos-items')
+		items_raw = r.hgetall(items_key)
 		for id, item_raw in items_raw.iteritems():
-			i = TodoItem.loads(item_raw)
+			i = TodoItem.loads(list_id, item_raw)
 			if i.completed:
 				total_completed += 1
 		total_items = len(items_raw)
