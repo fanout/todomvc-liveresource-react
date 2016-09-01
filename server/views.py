@@ -7,6 +7,11 @@ from gripcontrol import HttpResponseFormat, HttpStreamFormat, Channel
 from django_grip import set_hold_longpoll, set_hold_stream, publish
 from models import TodoItem
 
+def _add_totals(data):
+	total, completed = TodoItem.get_totals()
+	data['total-items'] = total
+	data['total-completed'] = completed
+
 def _json_data(data, pretty=True):
 	if pretty:
 		indent = 4
@@ -19,7 +24,10 @@ def _json_response(data, status=200):
 		content_type='application/json')
 
 def _list_response(items):
-	return _json_response([i.to_data() for i in items])
+	data_list = [i.to_data() for i in items]
+	if len(data_list) >= 1:
+		_add_totals(data_list[0])
+	return _json_response(data_list)
 
 def _item_response(item, status=200):
 	return _json_response(item.to_data(), status=status)
@@ -29,11 +37,8 @@ def _changes_link(list_id, change_id):
 
 def _publish_item(list_id, item, cursor):
 	total, completed = TodoItem.get_totals(list_id)
-
 	data = item.to_data()
-	data['total-items'] = total
-	data['total-completed'] = completed
-
+	_add_totals(data)
 	body = _json_data([data]) + '\n'
 	stream_data = deepcopy(data)
 	stream_data['change-id'] = str(cursor.cur)
