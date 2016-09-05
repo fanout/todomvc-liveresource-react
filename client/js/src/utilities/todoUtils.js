@@ -1,3 +1,4 @@
+import * as Constants from "../Constants";
 export function syncItems(data) {
     // TODO: Examine efficiency and correctness of this algorithm
 
@@ -45,3 +46,16 @@ function createGuid() {
     return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
 }
 
+export function combineUrl(url1 = "", url2 = "") {
+    const url1ToCombine = url1.charAt(url1.length - 1) === "/" ? url1.substring(0, url1.length - 1) : url1;
+    const url2ToCombine = url2.charAt(0) === "/" ? url2.substring(1) : url2;
+    return url1ToCombine + "/" + url2ToCombine;
+}
+
+export function buildItemsApiEndpoint(listId = "default", itemId) {
+    const endpointUrl = `todos/${listId}/items/`;
+
+    const finalEndpointUrl = itemId != null ? `${endpointUrl}${itemId}/` : endpointUrl;
+
+    return combineUrl(Constants.API_ENDPOINT_BASE, finalEndpointUrl);
+}

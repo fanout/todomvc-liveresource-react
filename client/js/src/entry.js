@@ -1,11 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { Router, Route, IndexRoute, browserHistory } from "react-router";
-import { createStore } from "redux";
+import createLogger from "redux-logger";
+import { createStore, applyMiddleware } from "redux";
 import { Provider } from "react-redux";
-
-//noinspection NpmUsedModulesInstalled
-import LiveResource from "liveresource";
 
 import * as Constants from "./Constants";
 import * as todoUtils from "./utilities/todoUtils";
@@ -43,18 +41,14 @@ class TodoAppCompleted extends React.PureComponent {
 //noinspection JSUnusedGlobalSymbols
 export function init(domNode) {
 
-    let endpointUrl = Constants.API_ENDPOINT;
+    const middlewareList = [];
+    middlewareList.push(createLogger());
 
-    const currentHostname = window.location.hostname;
-    const domainRegex = /todomvc\.(.*)\.org$/;
-    const result = domainRegex.exec(currentHostname);
-    if (result != null && result.length > 2) {
-        endpointUrl = `http://todomvc-api.${result[1]}.org/todos/`;
-    }
+    const enhancerFromMiddleware = applyMiddleware(...middlewareList);
 
     // Create the store
-    const store = createStore(rootReducer);
-    store.dispatch({type: "SET_OPTIONS", options: { endpointUrl, domNode }});
+    const store = createStore(rootReducer, enhancerFromMiddleware);
+    store.dispatch({type: "SET_OPTIONS", options: { domNode }});
 
     // Render!
     ReactDOM.render((
@@ -64,87 +58,19 @@ export function init(domNode) {
                     <IndexRoute component={TodoAppAll} />
                     <Route path="active" component={TodoAppActive} />
                     <Route path="completed" component={TodoAppCompleted} />
+                    <Route path=":listId">
+                        <IndexRoute component={TodoAppAll} />
+                        <Route path="active" component={TodoAppActive} />
+                        <Route path="completed" component={TodoAppCompleted} />
+                    </Route>
                 </Route>
             </Router>
         </Provider>
     ), domNode);
 
-    const useLiveResource = true;
-
-    let liveResourceReady = false;
-
-    if (useLiveResource) {
-
-        store.dispatch({type: "SET_LOADING_ITEMS_MESSAGE", loadingItemsMessage: "Loading todo list items..."});
-
-        LiveResource.options.maxLongPollDelayMsecs = 500;
-
-        var liveResource = new LiveResource(endpointUrl);
-        liveResource.on("ready", async () => {
-            // console.log("ready");
-            const response = await fetch(endpointUrl);
-            const responses = await response.json();
-
-            const todoItems = todoUtils.syncItems(responses);
-            store.dispatch({type: "SET_TODO_ITEMS", todoItems});
-            store.dispatch({type: "SET_LOADING_ITEMS_MESSAGE", loadingItemsMessage: null});
-            liveResourceReady = true;
-        });
-        liveResource.on("child-added", dataItem => {
-            // console.log("child-added");
-            // console.log(item);
-
-            const item = Object.assign({}, dataItem, { id: dataItem.id });
-
-            const state = store.getState();
-            const todo = fromRootReducer.getTodoState(state);
-            const stateTodoItems = fromTodo.getTodoItems(todo);
-
-            const index = stateTodoItems.findIndex(todoItem => todoItem.id === item.id);
-
-            let todoItems;
-
-            if (index < 0) {
-                todoItems = [...stateTodoItems, item];
-            } else {
-                if (stateTodoItems[index].pendingSync) {
-                    // If the item was pending sync then we pull it out
-                    // of the old location and add it to the end.
-                    todoItems = [
-                        ...stateTodoItems.slice(0, index),
-                        ...stateTodoItems.slice(index + 1),
-                        item
-                    ]
-                } else {
-                    todoItems = [
-                        ...stateTodoItems.slice(0, index),
-                        item,
-                        ...stateTodoItems.slice(index + 1)
-                    ]
-                }
-            }
-
-            store.dispatch({type: "SET_TODO_ITEMS", todoItems});
-        });
-        liveResource.on("child-deleted", item => {
-            const { id } = item;
-            // console.log("child-deleted");
-            // console.log(id);
-
-            const state = store.getState();
-            const todo = fromRootReducer.getTodoState(state);
-            const stateTodoItems = fromTodo.getTodoItems(todo);
-
-            const todoItems = stateTodoItems.filter(item => item.id !== id);
-            if (todoItems.length !== stateTodoItems.length) {
-                store.dispatch({type: "SET_TODO_ITEMS", todoItems});
-            }
-        });
-    }
-
     // These will hook up to ajax endpoints
     domNode.addEventListener("createTodo", async (e) => {
-        const { text } = e.detail;
+        const { listId, liveResourceReady, text } = e.detail;
         // console.log("createTodo");
         // console.log(text);
 
@@ -152,11 +78,13 @@ export function init(domNode) {
 
         const state = store.getState();
         const todo = fromRootReducer.getTodoState(state);
-        const stateTodoItems = fromTodo.getTodoItems(todo);
+        const stateTodoItems = fromTodo.getTodoItems(todo, listId);
 
-        store.dispatch({type: "SET_TODO_ITEMS", todoItems: [...stateTodoItems, item]});
+        store.dispatch({type: "SET_TODO_ITEMS", listId, todoItems: [...stateTodoItems, item]});
 
         if (liveResourceReady) {
+            const endpointUrl = todoUtils.buildItemsApiEndpoint(listId);
+
             const response = await fetch(endpointUrl, {
                 method: 'POST',
                 body: JSON.stringify(Object.assign({}, item, {id: null}))
@@ -165,65 +93,72 @@ export function init(domNode) {
 
             const state = store.getState();
             const todo = fromRootReducer.getTodoState(state);
-            const stateTodoItems = fromTodo.getTodoItems(todo);
+            const stateTodoItems = fromTodo.getTodoItems(todo, listId);
 
-            store.dispatch({type: "SET_TODO_ITEMS", todoItems: [
+            store.dispatch({type: "SET_TODO_ITEMS", listId, todoItems: [
                 ...stateTodoItems.filter(todoItem => todoItem !== item),
                 Object.assign(item, { id: responses.id })
             ]});
         }
     });
     domNode.addEventListener("updateTodoText", async (e) => {
+        const { listId, liveResourceReady } = e.detail;
         if (liveResourceReady) {
+            const endpointUrl = todoUtils.buildItemsApiEndpoint(listId, item.id);
+
             const { item } = e.detail;
             // console.log("updateTodoText");
             // console.log(item);
-            await fetch(`${endpointUrl}${item.id}/`, {
+            await fetch(endpointUrl, {
                 method: 'PUT',
                 body: JSON.stringify(item)
             });
         }
     });
     domNode.addEventListener("updateTodoComplete", async (e) => {
-        const { item } = e.detail;
+        const { listId, liveResourceReady, item } = e.detail;
         // console.log("updateTodoComplete");
         // console.log(item);
 
         const state = store.getState();
         const todo = fromRootReducer.getTodoState(state);
-        const stateTodoItems = fromTodo.getTodoItems(todo);
+        const stateTodoItems = fromTodo.getTodoItems(todo, listId);
 
         const index = stateTodoItems.findIndex(todoItem => todoItem.id === item.id);
 
         if (index !== -1) {
             const todoItems = stateTodoItems.slice();
             todoItems[index].completed = item.completed;
-            store.dispatch({type: "SET_TODO_ITEMS", todoItems});
+            store.dispatch({type: "SET_TODO_ITEMS", listId, todoItems});
         }
 
         if (liveResourceReady) {
-            await fetch(`${endpointUrl}${item.id}/`, {
+            const endpointUrl = todoUtils.buildItemsApiEndpoint(listId, item.id);
+
+            await fetch(endpointUrl, {
                 method: 'PUT',
                 body: JSON.stringify(item)
             });
         }
     });
     domNode.addEventListener("destroyTodo", async (e) => {
-        const { id } = e.detail;
+        const { listId, liveResourceReady, id } = e.detail;
         // console.log("destroyTodo");
         // console.log(id);
 
         const state = store.getState();
         const todo = fromRootReducer.getTodoState(state);
-        const stateTodoItems = fromTodo.getTodoItems(todo);
+        const stateTodoItems = fromTodo.getTodoItems(todo, listId);
 
         const todoItems = stateTodoItems.filter(item => item.id !== id);
         if (todoItems.length !== stateTodoItems.length) {
-            store.dispatch({type: "SET_TODO_ITEMS", todoItems});
+            store.dispatch({type: "SET_TODO_ITEMS", listId, todoItems});
         }
 
         if (liveResourceReady) {
-            await fetch(`${endpointUrl}${id}/`, {
+            const endpointUrl = todoUtils.buildItemsApiEndpoint(listId, id);
+
+            await fetch(endpointUrl, {
                 method: 'DELETE',
                 body: JSON.stringify({id})
             });

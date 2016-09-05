@@ -21,9 +21,9 @@ class TodoApp extends React.PureComponent {
         this._handleClearCompleted = ::this.handleClearCompleted;
     }
     render() {
-        const { mode, todoState } = this.props;
+        const { listId, listIdLiteral, mode, todoState } = this.props;
 
-        const todoItems = fromTodoReducer.getTodoItems(todoState);
+        const todoItems = fromTodoReducer.getTodoItems(todoState, listId);
         const loadingItemsMessage = fromTodoReducer.getLoadingItemsMessage(todoState);
 
         const filteredTodoItems = [];
@@ -63,7 +63,8 @@ class TodoApp extends React.PureComponent {
                     />
                 ): null}
                 {(activeTodosCount > 0 || completedTodosCount > 0) ? (
-                    <TodoAppFooter mode={mode}
+                    <TodoAppFooter listId={listIdLiteral}
+                                   mode={mode}
                                    activeTodosCount={activeTodosCount}
                                    completedTodosCount={completedTodosCount}
                                    onClearCompleted={this._handleClearCompleted}
@@ -73,13 +74,14 @@ class TodoApp extends React.PureComponent {
         );
     }
 
-    fireEvent(name, detail) {
-        const { optionsState } = this.props;
+    fireEvent(name, data) {
+        const { listId, liveResourceReady, optionsState } = this.props;
         const options = fromOptions.getOptions(optionsState);
         const { domNode } = options;
 
         if (domNode != null) {
             // create and dispatch the event
+            const detail = Object.assign({}, data, {listId, liveResourceReady});
             const event = new CustomEvent(name, {detail});
             domNode.dispatchEvent(event);
         }
@@ -98,8 +100,8 @@ class TodoApp extends React.PureComponent {
         this.fireEvent("destroyTodo", {id});
     }
     handleToggleAll(event) {
-        const { todoState } = this.props;
-        const todoItems = fromTodoReducer.getTodoItems(todoState);
+        const { listId, todoState } = this.props;
+        const todoItems = fromTodoReducer.getTodoItems(todoState, listId);
 
         const newValue = event.target.checked;
         todoItems.forEach(item => {
@@ -107,8 +109,8 @@ class TodoApp extends React.PureComponent {
         });
     }
     handleClearCompleted() {
-        const { todoState } = this.props;
-        const todoItems = fromTodoReducer.getTodoItems(todoState);
+        const { listId, todoState } = this.props;
+        const todoItems = fromTodoReducer.getTodoItems(todoState, listId);
 
         todoItems.forEach(item => {
             if (item.completed) {
@@ -122,7 +124,9 @@ function mapStateToProps(state, ownProps) {
     return {
         optionsState: fromRootReducer.getOptionsState(state),
         todoState: fromRootReducer.getTodoState(state),
-        mode: ownProps.mode
+        mode: ownProps.mode,
+        listId: ownProps.listId,
+        liveResourceReady: ownProps.liveResourceReady
     };
 }
 
