@@ -46,7 +46,7 @@ def _publish_item(list_id, item, cursor):
 	formats = []
 	formats.append(HttpResponseFormat(headers=headers, body=body))
 	formats.append(HttpStreamFormat(stream_content))
-	publish('todos', formats, id='%s-%s' % (list_id, cursor.cur), prev_id='%s-%s' % (list_id, cursor.prev))
+	publish('todos-%s' % list_id, formats, id=cursor.cur, prev_id=cursor.prev)
 
 def todos(request, list_id):
 	if request.method == 'OPTIONS':
@@ -69,7 +69,7 @@ def todos(request, list_id):
 			wait = int(wait)
 
 		if stream:
-			set_hold_stream(request, Channel('todos'))
+			set_hold_stream(request, Channel('todos-%s' % list_id))
 			return HttpResponse(content_type='text/plain')
 		else:
 			if after:
@@ -82,7 +82,7 @@ def todos(request, list_id):
 			resp = _list_response(list_id, items)
 			resp['Link'] = _changes_link(list_id, last_cursor.cur)
 			if len(items) == 0 and wait:
-				set_hold_longpoll(request, Channel('todos', prev_id='%s-%s' % (list_id, last_cursor.cur)), timeout=wait)
+				set_hold_longpoll(request, Channel('todos-%s' % list_id, prev_id=last_cursor.cur), timeout=wait)
 			return resp
 	elif request.method == 'POST':
 		params = json.loads(request.body)
