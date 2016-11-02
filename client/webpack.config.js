@@ -2,9 +2,91 @@
 
 const path = require('path');
 const webpack = require('webpack');
+const CompressionPlugin = require("compression-webpack-plugin");
 
 const staticDir = path.join(__dirname, 'js/build');
 const srcDir = path.join(__dirname, 'js/src');
+
+function buildBabelRule(...additionalPlugins) {
+    const babelRule = {
+        test: /\.js$/,
+        use: [
+            {
+                // Use Babel to transpile ES2015 + ES2017 async syntax
+                loader: 'babel',
+                options: JSON.stringify({
+                    presets: [
+                        ['es2015', {modules: false}],
+                        'react'
+                    ],
+                    plugins: [
+                        ...additionalPlugins,
+                        'transform-object-rest-spread',
+                        'transform-async-to-generator',
+                        'transform-runtime',
+                        'transform-function-bind'
+                    ]
+                })
+            }
+        ],
+        include: srcDir
+    };
+
+    return babelRule;
+}
+
+const babelRule = buildBabelRule();
+
+const cssRule = {
+    test: /\.css$/,
+    use: ['style', 'css'],
+    include: srcDir
+};
+
+const scssRule = {
+    test: /\.scss$/,
+    use: [ 'style', 'css?minimize&-autoprefixer', 'resolve-url', 'sass?sourceMap' ]
+};
+
+const urlRule = {
+    test: /\.(svg|jpg|gif|png)$/,
+    use: [
+        {
+            loader: 'url',
+            options: JSON.stringify({
+                "limit": 16384
+            })
+        }
+    ],
+    include: srcDir
+};
+
+const fileRule = {
+    test: /\.(ttf|eot|woff|woff2)(\?[a-z0-9]+)?$/,
+    loaders: ['file'],
+    include: srcDir
+};
+
+// Inject node prod/dev mode into "process.env.NODE_ENV" to optimize output
+// https://webpack.github.io/docs/list-of-plugins.html#defineplugin
+const envPlugin = new webpack.DefinePlugin({
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+});
+
+const compressionPlugin = new CompressionPlugin({
+    asset: "[path].gz[query]",
+    algorithm: "gzip",
+    test: /\.js$|\.css$/
+});
+
+const namedModulesPlugin = new webpack.NamedModulesPlugin();
+
+const esLintRule = {
+    enforce: 'pre',
+    test: /\.js$/,
+    use: [ 'eslint' ],
+    include: srcDir
+};
 
 const baseConfig = {
 
@@ -12,6 +94,9 @@ const baseConfig = {
 
     entry: {
         "main": [
+            'core-js/shim',
+            './shims/custom-event',
+            'whatwg-fetch',
             "./entry"
         ]
     },
@@ -26,114 +111,55 @@ const baseConfig = {
     },
 
     plugins: [
-        // Inject node prod/dev mode into "process.env.NODE_ENV" to optimize output
-        // https://webpack.github.io/docs/list-of-plugins.html#defineplugin
-        new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-        })
+        envPlugin
     ],
 
     module: {
-        loaders: [
-            {
-                test: /\.js$/,
-                loaders: [
-                    {
-                        // Use Babel to transpile ES2015 + ES2017 async syntax
-                        loader: 'babel',
-                        query: {
-                            presets: [
-                                ['es2015', {modules: false}],
-                                'react'
-                            ],
-                            plugins: [
-                                'transform-object-rest-spread',
-                                'transform-async-to-generator',
-                                'transform-runtime',
-                                'transform-function-bind'
-                            ]
-                        }
-                    }
-                ],
-                include: srcDir
-            },
-            {
-                test: /\.css$/,
-                loaders: ['style', 'css'],
-                include: srcDir
-            },
-            {
-                test: /\.scss$/,
-                loaders: [ 'style', 'css', 'resolve-url', 'sass?sourceMap' ]
-            },
-            {
-                test: /\.(svg|jpg|gif|png)$/,
-                loaders: [
-                    {
-                        loader: 'url',
-                        query: {
-                            "limit": 16384
-                        }
-                    }
-                ],
-                include: srcDir
-            },
-            {
-                test: /\.(ttf|eot|woff|woff2)(\?[a-z0-9]+)?$/,
-                loaders: ['file'],
-                include: srcDir
-            }
+        rules: [
+            babelRule,
+            cssRule,
+            scssRule,
+            urlRule,
+            fileRule
         ]
     },
 
-    externals: {
-        liveresource: "LiveResource"
+    node: {
+        console: true,
+        fs: 'empty'
     }
-};
 
-Object.keys(baseConfig.entry).forEach(e => {
-    const entry = baseConfig.entry[e];
-    entry.unshift(
-        'core-js/shim',
-        './shims/custom-event',
-        'whatwg-fetch'
-    );
-});
+};
 
 const prodConfig = Object.assign({}, baseConfig, {
 
-    // Use 'source-map' in prod mode, generate source maps
     devtool: 'source-map',
+
+    plugins: [ envPlugin, compressionPlugin ]
 
 });
 
 const devConfig = Object.assign({}, baseConfig, {
 
-    // Seems to give good results in all browsers for now.
+    // quick sourcemaps in dev
     devtool: 'eval',
 
-    module: Object.assign({}, baseConfig.module, {
-        preLoaders: [
-            {
-                test: /\.js$/,
-                loaders: [
-                    {
-                        loader: 'eslint'
-                    }
-                ],
-                include: srcDir
-            }
+    module: {
+        rules: [
+            esLintRule,
+            babelRule, // babelRuleReactHotLoader (disabling for now)
+            cssRule,
+            scssRule,
+            urlRule,
+            fileRule
         ]
-    }),
+    },
 
     output: Object.assign({}, baseConfig.output, {
         pathinfo: true
     }),
 
-    plugins: [
-        ...baseConfig.plugins,
-        new webpack.NamedModulesPlugin()
-    ]
+    plugins: [ envPlugin, namedModulesPlugin ]
 
 });
 
