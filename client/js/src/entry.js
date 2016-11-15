@@ -104,9 +104,8 @@ export function init(domNode) {
     domNode.addEventListener("updateTodoText", async (e) => {
         const { listId, liveResourceReady } = e.detail;
         if (liveResourceReady) {
-            const endpointUrl = todoUtils.buildItemsApiEndpoint(listId, item.id);
-
             const { item } = e.detail;
+            const endpointUrl = todoUtils.buildItemsApiEndpoint(listId, item.id);
             // console.log("updateTodoText");
             // console.log(item);
             await fetch(endpointUrl, {
