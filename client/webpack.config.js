@@ -2,7 +2,6 @@
 
 const path = require('path');
 const webpack = require('webpack');
-const CompressionPlugin = require("compression-webpack-plugin");
 
 const staticDir = path.join(__dirname, 'js/build');
 const srcDir = path.join(__dirname, 'js/src');
@@ -73,12 +72,6 @@ const envPlugin = new webpack.DefinePlugin({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
 });
 
-const compressionPlugin = new CompressionPlugin({
-    asset: "[path].gz[query]",
-    algorithm: "gzip",
-    test: /\.js$|\.css$/
-});
-
 const namedModulesPlugin = new webpack.NamedModulesPlugin();
 
 const esLintRule = {
@@ -135,7 +128,7 @@ const prodConfig = Object.assign({}, baseConfig, {
 
     devtool: 'source-map',
 
-    plugins: [ envPlugin, compressionPlugin ]
+    plugins: [ envPlugin ]
 
 });
 
