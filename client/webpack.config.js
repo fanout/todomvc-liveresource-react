@@ -2,7 +2,6 @@
 
 const path = require('path');
 const webpack = require('webpack');
-const CompressionPlugin = require("compression-webpack-plugin");
 
 const staticDir = path.join(__dirname, 'js/build');
 const srcDir = path.join(__dirname, 'js/src');
@@ -13,7 +12,7 @@ function buildBabelRule(...additionalPlugins) {
         use: [
             {
                 // Use Babel to transpile ES2015 + ES2017 async syntax
-                loader: 'babel',
+                loader: 'babel-loader',
                 options: JSON.stringify({
                     presets: [
                         ['es2015', {modules: false}],
@@ -39,20 +38,20 @@ const babelRule = buildBabelRule();
 
 const cssRule = {
     test: /\.css$/,
-    use: ['style', 'css'],
+    use: ['style-loader', 'css-loader'],
     include: srcDir
 };
 
 const scssRule = {
     test: /\.scss$/,
-    use: [ 'style', 'css?minimize&-autoprefixer', 'resolve-url', 'sass?sourceMap' ]
+    use: [ 'style-loader', 'css-loader?minimize&-autoprefixer', 'resolve-url-loader', 'sass-loader?sourceMap' ]
 };
 
 const urlRule = {
     test: /\.(svg|jpg|gif|png)$/,
     use: [
         {
-            loader: 'url',
+            loader: 'url-loader',
             options: JSON.stringify({
                 "limit": 16384
             })
@@ -63,7 +62,7 @@ const urlRule = {
 
 const fileRule = {
     test: /\.(ttf|eot|woff|woff2)(\?[a-z0-9]+)?$/,
-    loaders: ['file'],
+    loaders: ['file-loader'],
     include: srcDir
 };
 
@@ -71,12 +70,6 @@ const fileRule = {
 // https://webpack.github.io/docs/list-of-plugins.html#defineplugin
 const envPlugin = new webpack.DefinePlugin({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-});
-
-const compressionPlugin = new CompressionPlugin({
-    asset: "[path].gz[query]",
-    algorithm: "gzip",
-    test: /\.js$|\.css$/
 });
 
 const namedModulesPlugin = new webpack.NamedModulesPlugin();
@@ -135,7 +128,7 @@ const prodConfig = Object.assign({}, baseConfig, {
 
     devtool: 'source-map',
 
-    plugins: [ envPlugin, compressionPlugin ]
+    plugins: [ envPlugin ]
 
 });
 
