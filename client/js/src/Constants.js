@@ -3,7 +3,7 @@ export const KeyCodes = {
     ESCAPE_KEY: 27
 };
 
-export const API_ENDPOINT_BASE = "http://todo-api.liveresource.org/";
+export const API_ENDPOINT_BASE = "http://todo-api.fanoutapp.com/";
 
 export const TodoAppModes = {
     ALL: 'all',
