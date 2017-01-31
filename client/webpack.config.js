@@ -77,7 +77,7 @@ const namedModulesPlugin = new webpack.NamedModulesPlugin();
 const esLintRule = {
     enforce: 'pre',
     test: /\.js$/,
-    use: [ 'eslint' ],
+    use: [ 'eslint-loader' ],
     include: srcDir
 };
 
