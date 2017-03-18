@@ -62,7 +62,43 @@ class Main extends React.PureComponent {
                     const { todo } = this.props;
 
                     // console.log("child-added");
-                    // console.log(item);
+                    // console.log(dataItem);
+
+                    const item = Object.assign({}, dataItem, { listId, id: dataItem.id });
+
+                    const stateTodoItems = fromTodo.getTodoItems(todo, listId);
+
+                    const index = stateTodoItems.findIndex(todoItem => todoItem.id === item.id);
+
+                    let todoItems;
+
+                    if (index < 0) {
+                        todoItems = [...stateTodoItems, item];
+                    } else {
+                        if (stateTodoItems[index].pendingSync) {
+                            // If the item was pending sync then we pull it out
+                            // of the old location and add it to the end.
+                            todoItems = [
+                                ...stateTodoItems.slice(0, index),
+                                ...stateTodoItems.slice(index + 1),
+                                item
+                            ]
+                        } else {
+                            todoItems = [
+                                ...stateTodoItems.slice(0, index),
+                                item,
+                                ...stateTodoItems.slice(index + 1)
+                            ]
+                        }
+                    }
+
+                    dispatch({type: "SET_TODO_ITEMS", listId, todoItems});
+                });
+                this._liveResource.on("child-updated", dataItem => {
+                    const { todo } = this.props;
+
+                    // console.log("child-updated");
+                    // console.log(dataItem);
 
                     const item = Object.assign({}, dataItem, { listId, id: dataItem.id });
 
