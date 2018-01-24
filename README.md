@@ -23,7 +23,7 @@ Redis is used for storage. Either install a Redis server locally, or set `REDIS_
 Create a `.env` file containing `GRIP_URL`:
 
 ```sh
-GRIP_URL=http://api.fanout.io/realm/{realm-id}?iss={realm-id}&key=base64:{realm-key}
+GRIP_URL=https://api.fanout.io/realm/{realm-id}?iss={realm-id}&key=base64:{realm-key}
 ```
 
 Be sure to replace `{realm-id}` and `{realm-key}` with the values from the Fanout control panel.
@@ -45,7 +45,7 @@ python manage.py runserver
 Requests made to Fanout Cloud should be routed through ngrok to the local instance. Try a test call with curl:
 
 ```sh
-curl http://{realm-id}.fanoutcdn.com/todos/default/items/
+curl https://{realm-id}.fanoutcdn.com/todos/default/items/
 ```
 
 Next you need to set up the frontend. See [Frontend setup](#frontend-setup).
@@ -81,7 +81,7 @@ cd client
 npm install
 ```
 
-Edit `js/src/Constants.js` and change the `API_ENDPOINT_BASE` to point to the location of the server. For Fanout Cloud, that would be something like http://{realm-id}.fanoutcdn.com/ . For Pushpin that would be something like http://localhost:7999 .
+Edit `js/src/Constants.js` and change the `API_ENDPOINT_BASE` to point to the location of the server. For Fanout Cloud, that would be something like https://{realm-id}.fanoutcdn.com/ . For Pushpin that would be something like http://localhost:7999 .
 
 Use a webserver such as Apache or Nginx to serve the `client` directory.
 
